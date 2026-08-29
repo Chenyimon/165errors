@@ -58,14 +58,15 @@ curl -sf "https://$DOMAIN/health" >/dev/null 2>&1 \
   || echo "      WARNING: tunnel not answering yet"
 
 echo "[3/3] Expo..."
-( cd mobile && exec npx expo start $EXPO_MODE ) > /tmp/sorted-expo.log 2>&1 &
+IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)
+( cd mobile && REACT_NATIVE_PACKAGER_HOSTNAME="$IP" exec npx expo start ${EXPO_MODE:---lan} ) \
+  > /tmp/sorted-expo.log 2>&1 &
 sleep 25
 
 if [ "$EXPO_MODE" = "--tunnel" ]; then
   EXPO_URL=$(curl -s http://127.0.0.1:4041/api/tunnels 2>/dev/null \
     | grep -o '"public_url":"https://[^"]*"' | head -1 | cut -d'"' -f4 | sed 's|https://|exp://|')
 else
-  IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)
   EXPO_URL="exp://${IP}:8081"
 fi
 
