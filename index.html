@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>SORT/ED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page:#EDEAE0;
+    --surface:#FDFCF7;
+    --surface-alt:#F5F2E9;
+    --forest:#2C4736;
+    --forest-deep:#20362A;
+    --sage:#C6D3BA;
+    --sage-deep:#5C7359;
+    --track:#E4E1D2;
+    --sun:#E7A94C;
+    --sun-deep:#C98A32;
+    --terracotta:#6B3B57;
+    --water:#5B7C87;
+    --water-bg:#D8E4E7;
+    --ink:#20281F;
+    --ink-dim:#2B2E26;
+    --border:#E4E0D0;
+    --radius:18px;
+    --radius-sm:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--page);
+    color:var(--ink);
+    font-family:'Nunito',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:430px;
+    min-height:100vh;
+    background-color:var(--surface);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow-x:hidden;
+  }
+  .app-shell{display:flex; flex-direction:column; flex:1;}
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 18px 14px;
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:20;
+    background:var(--surface);
+  }
+  .wordmark{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:21px;
+    letter-spacing:0.2px;
+    color:var(--forest);
+  }
+  .wordmark span{color:var(--terracotta);}
+
+  /* ---------- Auth ---------- */
+  .auth-view{flex:1; display:flex; align-items:center; justify-content:center; padding:24px;}
+  .auth-card{width:100%; max-width:340px;}
+  .auth-card .wordmark{display:block; text-align:center; margin-bottom:4px;}
+  .auth-error{color:var(--terracotta); font-size:12.5px; margin:-4px 0 12px; text-align:center;}
+  .auth-switch{
+    display:block; width:100%; text-align:center; background:none; border:none;
+    color:var(--forest); font-weight:700; font-size:12.5px; margin-top:14px; cursor:pointer;
+    font-family:'Nunito',sans-serif;
+  }
+  .auth-divider{
+    display:flex; align-items:center; gap:10px; margin:18px 0 14px;
+    color:var(--ink-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.6px;
+  }
+  .auth-divider::before, .auth-divider::after{content:''; flex:1; height:1px; background:var(--border);}
+  .guest-tag{
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.3px;
+    color:var(--ink-dim); background:var(--track); border-radius:20px; padding:2px 8px; margin-left:6px;
+  }
+
+  /* ---------- Friends button + panel ---------- */
+  .friends-btn{
+    width:38px; height:38px; border-radius:50%; border:none; background:var(--sage);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .friends-btn svg{width:18px; height:18px; stroke:var(--forest);}
+  .panel-overlay{
+    position:fixed; inset:0; background:rgba(20,24,20,0.45);
+    display:flex; align-items:flex-end; justify-content:center; z-index:60;
+  }
+  .panel-sheet{
+    width:100%; max-width:430px; max-height:82vh; overflow-y:auto;
+    background:var(--surface); border-radius:22px 22px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  }
+  .panel-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .panel-title{font-family:'Fraunces',serif; font-weight:700; font-size:18px; color:var(--ink);}
+  .panel-close{
+    width:30px; height:30px; border-radius:50%; border:none; background:var(--surface-alt);
+    color:var(--ink-dim); font-size:14px; cursor:pointer;
+  }
+  .add-friend-row{display:flex; gap:8px; margin-bottom:6px;}
+  .add-friend-row input{
+    flex:1; padding:11px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+    background:var(--surface-alt); color:var(--ink); font-size:14px; font-family:'Nunito',sans-serif;
+  }
+  .add-friend-row .btn{flex:none; padding:11px 16px;}
+  .friend-row{display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--border);}
+  .friend-name{flex:1; font-weight:700; font-size:14px; color:var(--ink);}
+  .friend-pts{font-weight:800; font-size:13px; color:var(--terracotta);}
+  .friend-remove{
+    background:none; border:none; color:var(--ink-dim); font-size:11.5px; font-weight:700;
+    text-decoration:underline; cursor:pointer; font-family:'Nunito',sans-serif;
+  }
+
+  /* ---------- Board toggle ---------- */
+  .board-toggle{display:flex; gap:8px; margin-bottom:16px;}
+  .toggle-btn{
+    flex:1; padding:10px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+    background:var(--surface); color:var(--ink-dim); font-weight:700; font-size:12.5px;
+    text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; font-family:'Nunito',sans-serif;
+  }
+  .toggle-btn.active{background:var(--forest); border-color:var(--forest); color:#fff;}
+
+  /* ---------- Views ---------- */
+  main{flex:1; padding:20px 18px 100px; position:relative;}
+  .view{display:none; animation:fadeIn .25s ease;}
+  .view.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  h1.view-title{
+    font-family:'Nunito',sans-serif;
+    font-size:12px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    color:var(--ink-dim);
+    margin:0 0 18px;
+  }
+
+  /* ---------- Scan view ---------- */
+  .scan-hero{
+    display:flex; flex-direction:column; align-items:center;
+    padding:30px 10px 10px;
+    text-align:center;
+  }
+  .scan-btn{
+    width:180px; height:180px;
+    border-radius:50%;
+    border:none;
+    background:var(--forest);
+    box-shadow:0 0 0 10px var(--sage);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px;
+    cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .scan-btn:active{transform:scale(0.96); background:var(--forest-deep);}
+  .scan-btn svg{width:44px; height:44px;}
+  .scan-btn .label{
+    font-family:'Nunito',sans-serif;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase; font-weight:700;
+    color:#fff;
+  }
+  .scan-sub{color:var(--ink-dim); font-size:13px; margin-top:22px; max-width:260px; line-height:1.5;}
+
+  .analyzing{
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    padding:50px 10px;
+  }
+  .analyzing img{
+    width:140px; height:140px; object-fit:cover; border-radius:var(--radius);
+    border:1px solid var(--border); filter:saturate(0.75);
+  }
+  .spinner{
+    width:26px; height:26px;
+    border:3px solid var(--track);
+    border-top-color:var(--forest);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .analyzing .msg{font-family:'Nunito',sans-serif; font-size:12px; font-weight:600; color:var(--ink-dim); letter-spacing:0.5px;}
+
+  /* ---------- Post preview (before posting) ---------- */
+  .post-preview{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 10px 24px rgba(44,71,54,0.08);
+  }
+  .post-preview-image{width:100%; aspect-ratio:1/1; background:var(--surface-alt);}
+  .post-preview-image img{width:100%; height:100%; object-fit:cover; display:block;}
+  .post-preview-body{padding:18px;}
+
+  /* ---------- Feed post cards ---------- */
+  .post-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:hidden; margin-bottom:16px; box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 8px 20px rgba(44,71,54,0.07);
+  }
+  .post-header{display:flex; align-items:center; gap:10px; padding:12px 14px;}
+  .post-avatar{
+    width:36px; height:36px; border-radius:50%; background:var(--forest); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0;
+  }
+  .post-who{flex:1; min-width:0;}
+  .post-name{font-weight:700; font-size:13.5px; color:var(--ink);}
+  .post-time{font-size:11px; color:var(--ink-dim); margin-top:1px;}
+  .post-image{width:100%; aspect-ratio:1/1; background:var(--surface-alt); overflow:hidden;}
+  .post-image img{width:100%; height:100%; object-fit:cover; display:block;}
+  .post-body{padding:14px;}
+  .post-item{font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:var(--ink); margin-bottom:6px;}
+  .post-fact{font-size:12.5px; color:var(--ink-dim); line-height:1.5; margin-bottom:12px;}
+  .post-stats{display:flex; gap:8px; padding-top:12px; border-top:1px dashed var(--border);}
+  .post-stat{flex:1; text-align:center;}
+  .post-stat .num{display:block; font-weight:800; font-size:15px; color:var(--ink);}
+  .post-stat .num.accent{color:var(--terracotta);}
+  .post-stat .lbl{font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-dim); margin-top:2px;}
+  .post-actions{display:flex; gap:8px; margin-top:12px;}
+  .post-action-btn{
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface-alt); border:1.5px solid var(--border); border-radius:20px;
+    padding:7px 14px; font-family:'Nunito',sans-serif; font-weight:700; font-size:13px; color:var(--ink-dim);
+    cursor:pointer; transition:transform .12s ease, opacity .12s ease;
+  }
+  .post-action-btn:active{transform:scale(0.95);}
+  .post-action-btn.liked{background:#F3DDE6; border-color:#F3DDE6; color:#8A3B5C;}
+  .like-icon{font-size:14px;}
+
+  /* ---------- Comments panel ---------- */
+  .comment-row{display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);}
+  .comment-avatar{
+    width:30px; height:30px; border-radius:50%; background:var(--forest); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex-shrink:0;
+  }
+  .comment-body{flex:1; min-width:0;}
+  .comment-name{font-weight:700; font-size:12.5px; color:var(--ink); display:inline;}
+  .comment-time{font-size:10.5px; color:var(--ink-dim); margin-left:6px;}
+  .comment-text{font-size:13px; color:var(--ink); line-height:1.4; margin-top:2px;}
+  .add-comment-row{display:flex; gap:8px; margin-top:14px;}
+  .add-comment-row input{
+    flex:1; padding:11px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+    background:var(--surface-alt); color:var(--ink); font-size:14px; font-family:'Nunito',sans-serif;
+  }
+  .add-comment-row .btn{flex:none; padding:11px 16px;}
+
+  /* ---------- Preview content (category pill, stats row, fun fact) ---------- */
+  .ticket-cat{
+    display:inline-block;
+    font-size:11px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase;
+    border-radius:20px;
+    padding:4px 12px;
+    margin-bottom:10px;
+  }
+  .ticket-item{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:20px; line-height:1.3;
+    color:var(--ink);
+    margin-bottom:14px;
+  }
+  .ticket-stats{
+    display:flex;
+    gap:8px;
+    padding-bottom:14px;
+  }
+  .ticket-stat{flex:1; text-align:center;}
+  .ticket-stat .num{
+    font-family:'Nunito',sans-serif;
+    font-size:19px; font-weight:800; color:var(--ink);
+  }
+  .ticket-stat .num.accent{color:var(--terracotta);}
+  .ticket-stat .lbl{
+    font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-dim); margin-top:2px;
+  }
+  .ticket-fact{
+    background:var(--surface-alt);
+    padding:12px 14px;
+    border-radius:var(--radius-sm);
+    font-size:12.5px;
+    color:var(--ink-dim);
+    line-height:1.5;
+  }
+  .ticket-fact b{color:var(--ink);}
+  .reveal-actions{display:flex; gap:10px; margin-top:18px;}
+  .posting-status{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    width:100%; padding:13px; background:var(--surface-alt); border-radius:14px;
+  }
+  .posting-status .msg{font-family:'Nunito',sans-serif; font-size:13px; font-weight:600; color:var(--ink-dim);}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    flex:1;
+    padding:13px;
+    border-radius:14px;
+    border:1.5px solid var(--border);
+    background:var(--surface);
+    color:var(--ink);
+    font-family:'Nunito',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    text-align:center;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn.primary{background:var(--forest); border-color:var(--forest); color:#fff;}
+  .btn:active{opacity:0.85; transform:scale(0.97);}
+  .btn:disabled{opacity:0.45; cursor:not-allowed;}
+
+  /* ---------- Empty states ---------- */
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--ink-dim);
+  }
+  .empty-state .big{font-size:34px; margin-bottom:10px;}
+  .empty-state p{font-size:13px; line-height:1.6;}
+
+  /* ---------- Leaderboard ---------- */
+  .lb-row{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px;
+    border-radius:var(--radius-sm);
+    margin-bottom:8px;
+    background:var(--surface);
+    border:1px solid var(--border);
+  }
+  .lb-row.me{border-color:var(--forest); background:var(--sage);}
+  .lb-rank{
+    font-weight:800; font-size:13px;
+    color:var(--ink-dim); width:22px;
+  }
+  .lb-name{flex:1; font-size:14px; font-weight:700; color:var(--ink);}
+  .lb-pts{font-weight:800; color:var(--terracotta); font-size:14px;}
+
+  .form-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px; text-align:center; box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 10px 24px rgba(44,71,54,0.08);
+  }
+  .form-card p{font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;}
+  .form-card input{
+    width:100%; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+    background:var(--surface-alt); color:var(--ink); font-size:14px; margin-bottom:12px;
+    font-family:'Nunito',sans-serif;
+  }
+  .form-card input:focus{outline:none; border-color:var(--forest);}
+
+  /* ---------- Profile ---------- */
+  .profile-hero{text-align:center; padding:10px 0 22px;}
+  .profile-name{font-family:'Fraunces',serif; font-weight:700; font-size:22px; color:var(--ink);}
+
+  /* Weekly-streak style card */
+  .streak-card{
+    background:var(--forest); border-radius:var(--radius);
+    padding:22px; color:#fff; margin-bottom:22px;
+    box-shadow:0 10px 24px rgba(32,54,42,0.28);
+  }
+  .streak-top{display:flex; gap:14px; align-items:center; margin-bottom:20px;}
+  .streak-ring{
+    width:60px; height:60px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .streak-ring-inner{
+    width:44px; height:44px; border-radius:50%;
+    background:var(--forest-deep);
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px;
+  }
+  .streak-title{font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin-bottom:4px;}
+  .streak-sub{font-size:12.5px; color:rgba(255,255,255,0.72); line-height:1.5;}
+  .streak-bottom .big{font-family:'Nunito',sans-serif; font-weight:800; font-size:32px;}
+  .streak-bottom .cap{display:block; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.6); margin-top:2px;}
+
+  .profile-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px;
+  }
+  .profile-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:16px; text-align:center; box-shadow:0 1px 2px rgba(44,71,54,0.04), 0 6px 14px rgba(44,71,54,0.06);
+  }
+  .profile-card .num{font-family:'Nunito',sans-serif; font-size:24px; font-weight:800; color:var(--ink);}
+  .profile-card .num.accent{color:var(--terracotta);}
+  .profile-card .lbl{font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;}
+
+  .section-label{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--ink-dim);
+    margin:22px 0 10px;
+  }
+
+  /* Monthly-goal style progress bar */
+  .goal-row{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:8px;}
+  .goal-label{color:var(--ink);font-weight:600;}
+  .goal-value{font-weight:800; color:var(--ink);}
+  .goal-track{height:10px; background:var(--track); border-radius:6px; overflow:hidden;}
+  .goal-fill{height:100%; background:var(--forest); border-radius:6px;}
+
+  .cat-bar-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:12.5px;}
+  .cat-bar-row .cat-name{width:80px; flex-shrink:0; color:var(--ink-dim);}
+  .cat-bar-track{flex:1; height:8px; background:var(--track); border-radius:5px; overflow:hidden;}
+  .cat-bar-fill{height:100%; background:var(--forest); border-radius:5px;}
+  .cat-bar-count{width:20px; text-align:right; color:var(--ink-dim); font-weight:700;}
+
+  /* Milestone-unlocked style rows */
+  .milestone-row{display:flex; align-items:center; gap:14px; padding:10px 0;}
+  .milestone-badge{
+    width:44px; height:44px; border-radius:50%;
+    background:var(--terracotta); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px; flex-shrink:0;
+    transform:rotate(-4deg);
+    box-shadow:0 4px 10px rgba(107,59,87,0.35);
+  }
+  .milestone-row:nth-child(even) .milestone-badge{transform:rotate(4deg);}
+  .milestone-title{font-weight:700; font-size:14px; color:var(--ink);}
+  .milestone-sub{font-size:12px; color:var(--ink-dim); margin-top:1px;}
+
+  /* Category tag pills */
+  .tag{display:inline-block; font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; border-radius:20px; padding:4px 12px;}
+  .tag-sun{background:#F5DEB4; color:#8A5A22;}
+  .tag-water{background:var(--water-bg); color:var(--water);}
+  .tag-terracotta{background:#E7D9E3; color:var(--terracotta);}
+  .tag-sage{background:var(--sage); color:var(--sage-deep);}
+  .tag-compost{background:#E9DEC5; color:#6B5230;}
+  .tag-neutral{background:var(--track); color:var(--ink-dim);}
+  .icon-sun{background:#F5DEB4;}
+  .icon-water{background:var(--water-bg);}
+  .icon-terracotta{background:#E7D9E3;}
+  .icon-sage{background:var(--sage);}
+  .icon-compost{background:#E9DEC5;}
+  .icon-neutral{background:var(--track);}
+
+  /* ---------- Recyclable badge ---------- */
+  .badge-recyclable{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase;
+    border-radius:20px; padding:4px 10px; margin-left:8px;
+  }
+  .badge-recyclable.yes{background:#DCEBD6; color:#2C6B3F;}
+  .badge-recyclable.no{background:#F5E3C9; color:#8A5A22;}
+
+  /* ---------- Prep checklist ---------- */
+  .prep-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--ink-dim); margin:16px 0 6px;}
+  .prep-list{margin:0; padding:0;}
+  .prep-item{
+    display:flex; align-items:flex-start; gap:10px; padding:7px 0;
+    font-size:13px; color:var(--ink); cursor:pointer; user-select:none;
+  }
+  .prep-check{
+    width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border);
+    flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:#fff; background:var(--surface);
+  }
+  .prep-check.checked{background:var(--forest); border-color:var(--forest);}
+  .prep-item.done{color:var(--ink-dim); text-decoration:line-through;}
+
+  /* ---------- Challenges ---------- */
+  .challenge-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:14px; margin-bottom:10px;
+  }
+  .challenge-title{font-weight:700; font-size:14px; color:var(--ink); margin-bottom:2px;}
+  .challenge-desc{font-size:12px; color:var(--ink-dim); margin-bottom:10px;}
+  .challenge-track{height:8px; background:var(--track); border-radius:5px; overflow:hidden; margin-bottom:6px;}
+  .challenge-fill{height:100%; background:var(--forest); border-radius:5px;}
+  .challenge-card.complete .challenge-fill{background:var(--sun);}
+  .challenge-progress{font-size:11px; color:var(--ink-dim); text-align:right;}
+
+  /* ---------- Sponsor challenges ---------- */
+  .sponsor-card{border-radius:var(--radius); overflow:hidden; margin-bottom:12px; border:1px solid var(--border); box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 8px 20px rgba(44,71,54,0.07);}
+  .sponsor-banner{padding:12px 16px; color:#fff; display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px;}
+  .sponsor-body{padding:14px 16px; background:var(--surface);}
+  .sponsor-desc{font-size:12.5px; color:var(--ink-dim); margin-bottom:10px; line-height:1.5;}
+  .sponsor-reward{font-size:12px; color:var(--terracotta); font-weight:700; margin-top:8px;}
+
+  /* ---------- Group events ---------- */
+  .event-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px;}
+  .event-title{font-weight:700; font-size:14px; color:var(--ink); margin-bottom:4px;}
+  .event-meta{font-size:12px; color:var(--ink-dim); margin-bottom:2px;}
+  .event-actions{margin-top:10px; display:flex;}
+  .event-actions .btn{flex:none; padding:9px 16px; font-size:12.5px;}
+
+  /* ---------- Nearby bins ---------- */
+  .bins-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px;}
+  .bin-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);}
+  .bin-row:last-child{border-bottom:none;}
+  .bin-name{font-size:13px; font-weight:600; color:var(--ink);}
+  .bin-dist{font-size:12px; color:var(--ink-dim); flex-shrink:0; margin-left:10px;}
+  .bin-link{font-size:11px; font-weight:700; color:var(--forest); text-decoration:none;}
+
+  /* ---------- Tab bar ---------- */
+  #tabbar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:430px;
+    display:flex;
+    background:var(--surface);
+    border-top:1px solid var(--border);
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+    z-index:30;
+  }
+  .tab-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:none; border:none; color:var(--ink-dim); cursor:pointer;
+    padding:6px 0; font-family:'Nunito',sans-serif; font-size:10.5px; font-weight:700;
+    letter-spacing:0.3px; text-transform:uppercase;
+  }
+  .tab-btn svg{width:20px; height:20px;}
+  .tab-btn.active{color:var(--forest);}
+  .tab-btn.scan-tab{color:var(--ink-dim);}
+  .tab-btn.scan-tab .plus-circle{
+    width:46px; height:46px; border-radius:50%;
+    background:var(--forest);
+    display:flex; align-items:center; justify-content:center;
+    margin-top:-22px;
+    box-shadow:0 4px 10px rgba(32,54,42,0.3);
+  }
+  .tab-btn.scan-tab .plus-circle svg{width:22px; height:22px; stroke:#fff;}
+  .tab-btn.scan-tab.active{color:var(--forest);}
+  .tab-btn.scan-tab.active .plus-circle{background:var(--forest-deep);}
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--forest); color:#fff; padding:10px 18px; border-radius:30px;
+    font-size:13px; font-weight:700; opacity:0; pointer-events:none;
+    transition:all .25s ease; z-index:50; white-space:nowrap;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Twemoji ---------- */
+  img.emoji{
+    height:1.1em; width:1.1em; margin:0 .05em 0 .1em;
+    vertical-align:-0.2em; display:inline-block;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="auth-view" class="auth-view">
+    <div class="auth-card form-card">
+      <div class="wordmark">SORT<span>/</span>ED</div>
+      <p id="auth-sub">Log in to add friends and appear on the leaderboard.</p>
+      <input id="auth-username" placeholder="Username" maxlength="24" autocapitalize="none" autocomplete="username">
+      <input id="auth-password" placeholder="Password" type="password" maxlength="64" autocomplete="current-password">
+      <div id="auth-error" class="auth-error" style="display:none;"></div>
+      <button class="btn primary" id="auth-submit" style="width:100%;">Log in</button>
+      <button class="auth-switch" id="auth-switch" type="button">Need an account? Sign up</button>
+      <div class="auth-divider"><span>or</span></div>
+      <button class="btn" id="auth-guest-btn" type="button" style="width:100%;">Continue as guest</button>
+    </div>
+  </div>
+
+  <div id="app-shell" class="app-shell" style="display:none;">
+
+  <header>
+    <div class="wordmark">SORT<span>/</span>ED</div>
+    <button class="friends-btn" id="friends-btn" aria-label="Friends">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.6 5.5-4.6s4.7 1.6 5.5 4.6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.6c2 .2 3.6 1.7 4.3 4.4"/></svg>
+    </button>
+  </header>
+
+  <main>
+
+    <!-- FEED VIEW -->
+    <section class="view active" id="view-feed">
+      <h1 class="view-title">Community feed</h1>
+      <div id="feed-list"></div>
+    </section>
+
+    <!-- LEADERBOARD VIEW -->
+    <section class="view" id="view-board">
+      <h1 class="view-title">Leaderboard</h1>
+      <div id="board-content"></div>
+    </section>
+
+    <!-- SCAN / POST VIEW -->
+    <section class="view" id="view-scan">
+      <h1 class="view-title">New post</h1>
+      <div id="scan-idle" class="scan-hero">
+        <button class="scan-btn" id="scan-trigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.6"><path d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .9-.55l.6-1.2A1 1 0 0 1 9.6 3.6h4.8a1 1 0 0 1 .9.55l.6 1.2a1 1 0 0 0 .9.55H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
+          <span class="label">Scan</span>
+        </button>
+        <p class="scan-sub">Photograph what you're recycling. We'll identify it, estimate your impact, and get it ready to share with the feed.</p>
+      </div>
+
+      <div id="scan-analyzing" class="analyzing" style="display:none;">
+        <img id="analyzing-preview" src="" alt="">
+        <div class="spinner"></div>
+        <div class="msg" id="analyzing-msg">READING MATERIAL...</div>
+      </div>
+
+      <div id="scan-reveal" style="display:none;"></div>
+    </section>
+
+    <!-- PROFILE VIEW -->
+    <section class="view" id="view-profile">
+      <h1 class="view-title">Your impact</h1>
+      <div id="profile-content"></div>
+    </section>
+
+  </main>
+
+  <nav id="tabbar">
+    <button class="tab-btn active" data-view="feed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/></svg>
+      Feed
+    </button>
+    <button class="tab-btn" data-view="board">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0V4z"/><path d="M6 6H4a2 2 0 0 0 0 4h2M18 6h2a2 2 0 0 1 0 4h-2"/></svg>
+      Board
+    </button>
+    <button class="tab-btn scan-tab" data-view="scan">
+      <span class="plus-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>
+      Post
+    </button>
+    <button class="tab-btn" data-view="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
+      You
+    </button>
+  </nav>
+
+  <div id="friends-panel" class="panel-overlay" style="display:none;">
+    <div class="panel-sheet">
+      <div class="panel-header">
+        <div class="panel-title">Friends</div>
+        <button class="panel-close" id="friends-close" type="button">✕</button>
+      </div>
+      <div id="friends-body"></div>
+    </div>
+  </div>
+
+  <div id="comments-panel" class="panel-overlay" style="display:none;">
+    <div class="panel-sheet">
+      <div class="panel-header">
+        <div class="panel-title">Comments</div>
+        <button class="panel-close" id="comments-close" type="button">✕</button>
+      </div>
+      <div id="comments-body"></div>
+    </div>
+  </div>
+
+  </div>
+
+  <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+  <div id="toast"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
+<script>
+(function(){
+  const STORAGE = window.storage;
+
+  const TWEMOJI_BASE = 'https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/';
+  function emojify(el){
+    if(window.twemoji) window.twemoji.parse(el || document.body, {base: TWEMOJI_BASE, folder:'svg', ext:'.svg'});
+  }
+
+  // ---- Backend API config ----
+  // After deploying the FastAPI service in /server (see README), replace these two values.
+  const API_ENDPOINT = "https://canine-cupbearer-cringing.ngrok-free.dev";
+  const APP_SECRET = "REPLACE_WITH_YOUR_OWN_SECRET"; // must match APP_SECRET set on the server
+
+  const IMPACT = {
+    plastic:{co2:1.5, label:'Plastic', icon:'♳', tag:'sun', recyclable:true, recycleLabel:'Recyclable'},
+    glass:{co2:0.3, label:'Glass', icon:'🍾', tag:'water', recyclable:true, recycleLabel:'Recyclable'},
+    metal:{co2:4.0, label:'Metal', icon:'🥫', tag:'terracotta', recyclable:true, recycleLabel:'Recyclable'},
+    paper:{co2:0.9, label:'Paper', icon:'📄', tag:'sage', recyclable:true, recycleLabel:'Recyclable'},
+    compost:{co2:0.4, label:'Compost', icon:'🍂', tag:'compost', recyclable:true, recycleLabel:'Compostable'},
+    other:{co2:0.5, label:'Other', icon:'♻️', tag:'neutral', recyclable:false, recycleLabel:'Check locally'}
+  };
+  const SIZE_G = {small:15, medium:80, large:300};
+
+  const PREP_TIPS = {
+    plastic: ['Empty and rinse the container', 'Remove the cap and recycle it separately if your area requires that', 'Flatten it to save space'],
+    glass: ['Empty out any liquid', 'Give it a quick rinse', 'Remove metal or plastic lids'],
+    metal: ['Empty the can completely', 'Rinse off any food residue', 'Labels are fine to leave on'],
+    paper: ['Make sure it\'s dry', 'Remove plastic wrapping, tape, or bubble wrap', 'Flatten boxes to save space'],
+    compost: ['Remove any packaging or stickers', 'Keep liquids and oils out'],
+    other: ['Check your local recycling guidelines for this material', 'When in doubt, keep it out of the recycling bin']
+  };
+
+  const CHALLENGES = [
+    {id:'plastic20', title:'Plastic Purge', desc:'Recycle 20 plastic items', metric:'category:plastic', target:20},
+    {id:'items50', title:'Half Century', desc:'Recycle 50 items in total', metric:'totalScans', target:50},
+    {id:'streak7', title:'Week Warrior', desc:'Reach a 7-day streak', metric:'longestStreak', target:7},
+    {id:'points500', title:'Point Hoarder', desc:'Earn 500 points', metric:'totalPoints', target:500}
+  ];
+
+  const SPONSOR_CHALLENGES = [
+    {
+      id:'coke20', sponsor:'🥤 Coca-Cola Recycling Challenge', color:'#B3221E',
+      desc:'Recycle 20 bottles this month.', metric:'category:plastic', target:20,
+      reward:'Earn 500 SORT points → Get a $5 voucher'
+    },
+    {
+      id:'nus30', sponsor:'🎓 NUS × SORT/ED Sustainability Challenge', color:'#2C4736',
+      desc:'Recycle 30 items this semester as part of the campus drive.', metric:'totalScans', target:30,
+      reward:'Featured on the NUS sustainability leaderboard'
+    }
+  ];
+
+  const EVENTS = [
+    {id:'beach1', title:'East Coast Beach Cleanup', date:'Sat, 6 Sep · 9:00 AM', location:'East Coast Park, Area C', spots:40},
+    {id:'park1', title:'Bishan Park Litter Sweep', date:'Sun, 14 Sep · 8:30 AM', location:'Bishan-Ang Mo Kio Park', spots:25},
+    {id:'campus1', title:'Campus Green Day', date:'Fri, 19 Sep · 3:00 PM', location:'NUS University Town', spots:60}
+  ];
+
+  const BINS = [
+    {id:'bin1', name:'NUS UTown Recycling Point', lat:1.3055, lng:103.7734},
+    {id:'bin2', name:'East Coast Park Recycling Bin', lat:1.3010, lng:103.9120},
+    {id:'bin3', name:'Bishan Park Recycling Station', lat:1.3506, lng:103.8496},
+    {id:'bin4', name:'Orchard Road Recycling Bin', lat:1.3048, lng:103.8318},
+    {id:'bin5', name:'Jurong Lake Gardens Bin', lat:1.3399, lng:103.7269}
+  ];
+
+  function metricValue(profile, metric){
+    if(metric === 'totalScans') return profile.totalScans;
+    if(metric === 'totalPoints') return profile.totalPoints;
+    if(metric === 'longestStreak') return profile.longestStreak;
+    if(metric.startsWith('category:')) return profile.byCategory[metric.split(':')[1]] || 0;
+    return 0;
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2){
+    const R = 6371;
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLon = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  let profile = null;
+  let pendingPost = null;
+  let session = {token:null, username:null};
+  let guestTag = null;
+
+  function defaultProfile(){
+    return {username:null, totalPoints:0, currentStreak:0, longestStreak:0, lastScanDate:null, totalScans:0, byCategory:{}};
+  }
+
+  function baseHeaders(extra){
+    return Object.assign({"x-app-secret": APP_SECRET, "ngrok-skip-browser-warning":"true"}, extra||{});
+  }
+  function authHeaders(extra){
+    return Object.assign(baseHeaders(extra), {"Authorization": "Bearer "+(session.token||'')});
+  }
+  function requestHeaders(extra){
+    return session.token ? authHeaders(extra) : baseHeaders(extra);
+  }
+
+  async function loadSession(){
+    try{
+      const r = await STORAGE.get('session', false);
+      session = r ? JSON.parse(r.value) : {token:null, username:null};
+    }catch(e){ session = {token:null, username:null}; }
+  }
+  async function saveSession(){
+    try{ await STORAGE.set('session', JSON.stringify(session), false); }
+    catch(e){ console.error('save session failed', e); }
+  }
+  async function ensureGuestTag(){
+    try{
+      const r = await STORAGE.get('guestTag', false);
+      if(r && r.value){ guestTag = r.value; return; }
+    }catch(e){}
+    guestTag = String(Math.floor(1000 + Math.random()*9000));
+    try{ await STORAGE.set('guestTag', guestTag, false); }catch(e){}
+  }
+  async function hasGuestOptIn(){
+    try{
+      const r = await STORAGE.get('guestOptIn', false);
+      return !!(r && r.value === 'true');
+    }catch(e){ return false; }
+  }
+  async function setGuestOptIn(val){
+    try{ await STORAGE.set('guestOptIn', val ? 'true' : 'false', false); }
+    catch(e){}
+  }
+
+  async function apiSignup(username, password){
+    const res = await fetch(API_ENDPOINT + '/api/auth/signup', {
+      method:'POST', headers: baseHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({username, password})
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail || 'Signup failed');
+    return data;
+  }
+  async function apiLogin(username, password){
+    const res = await fetch(API_ENDPOINT + '/api/auth/login', {
+      method:'POST', headers: baseHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({username, password})
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail || 'Login failed');
+    return data;
+  }
+  async function apiLogout(){
+    try{ await fetch(API_ENDPOINT + '/api/auth/logout', {method:'POST', headers: authHeaders()}); }
+    catch(e){}
+  }
+
+  async function loadProfile(){
+    if(session.token){
+      const res = await fetch(API_ENDPOINT + '/api/profile', {headers: authHeaders()});
+      if(!res.ok) throw new Error('profile fetch failed: '+res.status);
+      const data = await res.json();
+      profile = Object.assign({}, data, {username: session.username});
+      return;
+    }
+    try{
+      const r = await STORAGE.get('guestProfile', false);
+      profile = r ? JSON.parse(r.value) : defaultProfile();
+    }catch(e){ profile = defaultProfile(); }
+    profile.username = null;
+  }
+  async function saveProfile(){
+    if(session.token){
+      try{
+        await fetch(API_ENDPOINT + '/api/profile', {
+          method:'PUT', headers: authHeaders({'Content-Type':'application/json'}),
+          body: JSON.stringify({
+            totalPoints: profile.totalPoints, currentStreak: profile.currentStreak,
+            longestStreak: profile.longestStreak, lastScanDate: profile.lastScanDate,
+            totalScans: profile.totalScans, byCategory: profile.byCategory
+          })
+        });
+      }catch(e){ console.error('save profile failed', e); }
+      return;
+    }
+    try{ await STORAGE.set('guestProfile', JSON.stringify(profile), false); }
+    catch(e){ console.error('save guest profile failed', e); }
+  }
+  async function loadLeaderboard(scope){
+    try{
+      const url = scope === 'friends' ? API_ENDPOINT+'/api/leaderboard/friends' : API_ENDPOINT+'/api/leaderboard';
+      const headers = scope === 'friends' ? authHeaders() : baseHeaders();
+      const res = await fetch(url, {headers});
+      if(!res.ok) return [];
+      return await res.json();
+    }catch(e){ return []; }
+  }
+  async function loadFriends(){
+    try{
+      const res = await fetch(API_ENDPOINT + '/api/friends', {headers: authHeaders()});
+      if(!res.ok) return [];
+      return await res.json();
+    }catch(e){ return []; }
+  }
+  async function addFriend(username){
+    const res = await fetch(API_ENDPOINT + '/api/friends', {
+      method:'POST', headers: authHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({username})
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail || 'Could not add friend');
+    return data;
+  }
+  async function removeFriend(username){
+    try{
+      await fetch(API_ENDPOINT + '/api/friends/' + encodeURIComponent(username), {
+        method:'DELETE', headers: authHeaders()
+      });
+    }catch(e){ console.error('remove friend failed', e); }
+  }
+  async function loadPosts(){
+    try{
+      const qs = session.token ? '' : ('?guest_tag=' + encodeURIComponent(guestTag || ''));
+      const res = await fetch(API_ENDPOINT + '/api/posts' + qs, {headers: requestHeaders()});
+      if(!res.ok) return [];
+      return await res.json();
+    }catch(e){ return []; }
+  }
+  async function toggleLike(postId){
+    const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + '/like', {
+      method:'POST', headers: requestHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({guest_tag: session.token ? null : guestTag})
+    });
+    if(!res.ok) throw new Error('like failed');
+    return res.json();
+  }
+  async function loadComments(postId){
+    try{
+      const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + '/comments', {headers: baseHeaders()});
+      if(!res.ok) return [];
+      return await res.json();
+    }catch(e){ return []; }
+  }
+  async function addComment(postId, text){
+    const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + '/comments', {
+      method:'POST', headers: requestHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({text, guest_tag: session.token ? null : guestTag})
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail || 'Could not post comment');
+    return data;
+  }
+  function postImageUrl(path){
+    if(!path) return '';
+    return path.startsWith('http') ? path : API_ENDPOINT + path;
+  }
+
+  function compressImage(file, maxDim, quality){
+    maxDim = maxDim || 720; quality = quality || 0.7;
+    return new Promise((resolve,reject)=>{
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = ()=>{
+        let {width, height} = img;
+        if(width > height){ if(width > maxDim){ height = Math.round(height*maxDim/width); width = maxDim; } }
+        else{ if(height > maxDim){ width = Math.round(width*maxDim/height); height = maxDim; } }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  async function classifyImage(base64, mediaType){
+    const res = await fetch(API_ENDPOINT + '/api/classify', {
+      method:"POST",
+      headers: baseHeaders({"Content-Type":"application/json"}),
+      body: JSON.stringify({image_base64: base64, media_type: mediaType})
+    });
+    if(!res.ok) throw new Error('classify request failed: '+res.status);
+    return res.json();
+  }
+
+  function computeImpact(category, sizeBucket){
+    const imp = IMPACT[category] || IMPACT.other;
+    const weightG = SIZE_G[sizeBucket] || SIZE_G.medium;
+    const co2G = Math.round(weightG * imp.co2);
+    const points = Math.max(5, Math.round(co2G/3));
+    return {weightG, co2G, points, imp, category: IMPACT[category] ? category : 'other'};
+  }
+
+  function updateStreak(){
+    const today = new Date().toISOString().slice(0,10);
+    if(profile.lastScanDate === today) return;
+    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    profile.currentStreak = (profile.lastScanDate === yesterday) ? profile.currentStreak+1 : 1;
+    profile.lastScanDate = today;
+    profile.longestStreak = Math.max(profile.longestStreak, profile.currentStreak);
+  }
+
+  function applyStreakBonus(points){
+    const bonus = 1 + Math.min(profile.currentStreak,10)*0.1;
+    return Math.round(points*bonus);
+  }
+
+  function timeAgo(ts){
+    const diff = Date.now()-ts;
+    const min = Math.floor(diff/60000);
+    if(min < 1) return 'just now';
+    if(min < 60) return min+'m ago';
+    const hr = Math.floor(min/60);
+    if(hr < 24) return hr+'h ago';
+    return Math.floor(hr/24)+'d ago';
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  // ---------- Scan flow ----------
+  const cameraInput = document.getElementById('camera-input');
+  document.getElementById('scan-trigger').addEventListener('click', ()=> cameraInput.click());
+  cameraInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) handleFile(file);
+    cameraInput.value = '';
+  });
+
+  const analyzingMsgs = [
+    'Hold up… saving the Earth. 🌎',
+    'Trash? We prefer "future resources."',
+    'Giving your waste a second chance…',
+    'Plot twist: your trash has value.',
+    'Your recycling streak is looking 🔥',
+    'Turning trash into treasure…',
+    'BRB, reducing your carbon footprint.',
+    'The planet called. It said thanks.',
+    'Certified eco moment. 🌱',
+    'Making waste work for you.',
+    'One less thing in the landfill…',
+    'Your trash just got an upgrade.',
+    'Loading… because even recycling needs a break.',
+    'Eco mode: ON.',
+    'Touch grass. Recycle first. 🌱'
+  ];
+  const postingMsgs = [
+    'Calculating your impact…',
+    'Counting your eco points…',
+    'Measuring your impact…',
+    'Adding another win for the planet…',
+    'Your next achievement is loading…',
+    'Updating the leaderboard…',
+    'Turning your recycling into points…',
+    'Another recycle, another step forward.',
+    'Your streak is growing…',
+    'Impact unlocked. ♻️',
+    'Points incoming…',
+    'Preparing your next challenge…',
+    "Scanning the good you've done…",
+    'Calculating how much waste you saved…'
+  ];
+  async function handleFile(file){
+    document.getElementById('scan-idle').style.display = 'none';
+    document.getElementById('scan-reveal').style.display = 'none';
+    document.getElementById('scan-analyzing').style.display = 'flex';
+
+    let msgIdx = 0;
+    const msgEl = document.getElementById('analyzing-msg');
+    msgEl.textContent = analyzingMsgs[0];
+    const msgTimer = setInterval(()=>{
+      msgIdx = (msgIdx+1) % analyzingMsgs.length;
+      msgEl.textContent = analyzingMsgs[msgIdx];
+    }, 1100);
+
+    try{
+      const imageDataUrl = await compressImage(file);
+      document.getElementById('analyzing-preview').src = imageDataUrl;
+      const meta = imageDataUrl.substring(0, imageDataUrl.indexOf(','));
+      const base64 = imageDataUrl.substring(imageDataUrl.indexOf(',')+1);
+      const mediaType = (meta.match(/data:(.*);base64/) || [,'image/jpeg'])[1];
+
+      const result = await classifyImage(base64, mediaType);
+
+      if(result.needs_confirmation){
+        clearInterval(msgTimer);
+        document.getElementById('scan-analyzing').style.display = 'none';
+        renderRetakePrompt(imageDataUrl);
+        return;
+      }
+
+      const {weightG, co2G, points, imp, category} = computeImpact(result.category, result.size_bucket);
+
+      pendingPost = {
+        category,
+        itemName: result.item_name || imp.label,
+        weightG, co2G, points,
+        funFact: result.fun_fact || '',
+        imageDataUrl
+      };
+
+      clearInterval(msgTimer);
+      document.getElementById('scan-analyzing').style.display = 'none';
+      renderReview(pendingPost);
+    }catch(err){
+      console.error(err);
+      clearInterval(msgTimer);
+      document.getElementById('scan-analyzing').style.display = 'none';
+      document.getElementById('scan-idle').style.display = 'flex';
+      showToast("Couldn't read that scan — try again");
+    }
+  }
+
+  function renderRetakePrompt(imageDataUrl){
+    const revealEl = document.getElementById('scan-reveal');
+    revealEl.innerHTML = `
+      <div class="post-preview">
+        <div class="post-preview-image"><img src="${imageDataUrl}" alt=""></div>
+        <div class="post-preview-body" style="text-align:center;">
+          <div class="prep-label" style="margin:0 0 8px;">Hmm, hard to tell</div>
+          <div class="ticket-item">That photo's a little too dark or blurry to identify clearly.</div>
+          <p style="color:var(--ink-dim); font-size:13px; margin:10px 0 0;">Try again with better lighting and the item centered in frame.</p>
+        </div>
+      </div>
+      <div class="reveal-actions">
+        <button class="btn primary" id="retake-retry-btn" style="width:100%;">Retake photo</button>
+      </div>
+    `;
+    revealEl.style.display = 'block';
+    emojify(revealEl);
+    document.getElementById('retake-retry-btn').addEventListener('click', resetScanView);
+  }
+
+  let prepChecked = [];
+
+  function renderReview(pending){
+    const imp = IMPACT[pending.category];
+    const tips = PREP_TIPS[pending.category] || [];
+    prepChecked = tips.map(()=>false);
+    const revealEl = document.getElementById('scan-reveal');
+    revealEl.innerHTML = `
+      <div class="post-preview">
+        <div class="post-preview-image"><img src="${pending.imageDataUrl}" alt=""></div>
+        <div class="post-preview-body">
+          <div class="ticket-cat tag-${imp.tag}">${imp.icon} ${imp.label}</div>
+          <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓' : '!'} ${imp.recycleLabel}</span>
+          <div class="ticket-item">${escapeHtml(pending.itemName)}</div>
+          <div class="ticket-stats">
+            <div class="ticket-stat"><div class="num">${pending.weightG}g</div><div class="lbl">Est. weight</div></div>
+            <div class="ticket-stat"><div class="num">${pending.co2G}g</div><div class="lbl">CO2 saved</div></div>
+            <div class="ticket-stat"><div class="num accent">+${pending.points}</div><div class="lbl">Points</div></div>
+          </div>
+          ${pending.funFact ? `<div class="ticket-fact"><b>Did you know:</b> ${escapeHtml(pending.funFact)}</div>` : ''}
+          ${tips.length ? `
+            <div class="prep-label">Before you toss it in</div>
+            <div class="prep-list">
+              ${tips.map((tip,i)=>`
+                <div class="prep-item" data-idx="${i}">
+                  <span class="prep-check">✓</span>
+                  <span class="prep-text">${escapeHtml(tip)}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+      <div class="reveal-actions">
+        <button class="btn" id="retake-btn">Retake</button>
+        <button class="btn primary" id="post-btn" ${tips.length ? 'disabled' : ''}>Post to feed</button>
+      </div>
+    `;
+    revealEl.style.display = 'block';
+    emojify(revealEl);
+    document.getElementById('retake-btn').addEventListener('click', resetScanView);
+    document.getElementById('post-btn').addEventListener('click', ()=> finalizePost(pendingPost));
+    revealEl.querySelectorAll('.prep-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const idx = Number(el.dataset.idx);
+        prepChecked[idx] = !prepChecked[idx];
+        el.classList.toggle('done', prepChecked[idx]);
+        el.querySelector('.prep-check').classList.toggle('checked', prepChecked[idx]);
+        const postBtn = document.getElementById('post-btn');
+        if(postBtn) postBtn.disabled = !prepChecked.every(Boolean);
+      });
+    });
+  }
+
+  function resetScanView(){
+    pendingPost = null;
+    document.getElementById('scan-reveal').style.display = 'none';
+    document.getElementById('scan-idle').style.display = 'flex';
+  }
+
+  async function finalizePost(pending){
+    const actionsEl = document.querySelector('.reveal-actions');
+    let msgIdx = 0;
+    if(actionsEl){
+      actionsEl.innerHTML = `
+        <div class="posting-status">
+          <div class="spinner"></div>
+          <div class="msg" id="posting-msg">${postingMsgs[0]}</div>
+        </div>
+      `;
+    }
+    const msgTimer = setInterval(()=>{
+      msgIdx = (msgIdx+1) % postingMsgs.length;
+      const msgEl = document.getElementById('posting-msg');
+      if(msgEl) msgEl.textContent = postingMsgs[msgIdx];
+    }, 1100);
+
+    updateStreak();
+    const finalPoints = applyStreakBonus(pending.points);
+    profile.totalPoints += finalPoints;
+    profile.totalScans += 1;
+    profile.byCategory[pending.category] = (profile.byCategory[pending.category]||0)+1;
+    await saveProfile();
+
+    try{
+      const form = new FormData();
+      form.append('category', pending.category);
+      form.append('item_name', pending.itemName);
+      form.append('weight_g', String(pending.weightG));
+      form.append('co2_g', String(pending.co2G));
+      form.append('points', String(finalPoints));
+      form.append('fun_fact', pending.funFact || '');
+      if(!session.token) form.append('guest_tag', guestTag);
+      const blob = await (await fetch(pending.imageDataUrl)).blob();
+      form.append('image', blob, 'photo.jpg');
+
+      const res = await fetch(API_ENDPOINT + '/api/posts', {
+        method:'POST', headers: requestHeaders(), body: form
+      });
+      if(!res.ok) throw new Error('post failed: '+res.status);
+
+      clearInterval(msgTimer);
+      resetScanView();
+      showToast('Posted to the feed!');
+      document.querySelector('.tab-btn[data-view="feed"]').click();
+    }catch(err){
+      console.error(err);
+      clearInterval(msgTimer);
+      renderReview(pending);
+      showToast("Couldn't post — try again");
+    }
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- Feed ----------
+  function postCardHtml(p){
+    const imp = IMPACT[p.category] || IMPACT.other;
+    const initial = (p.username||'?').trim().charAt(0).toUpperCase();
+    return `<div class="post-card">
+      <div class="post-header">
+        <div class="post-avatar">${initial}</div>
+        <div class="post-who">
+          <div class="post-name">${escapeHtml(p.username||'Someone')}${p.isGuest ? ' <span class="guest-tag">Guest</span>' : ''}</div>
+          <div class="post-time">${timeAgo(p.ts)}</div>
+        </div>
+        <div class="tag tag-${imp.tag}">${imp.icon} ${imp.label}</div>
+      </div>
+      ${p.imageUrl ? `<div class="post-image"><img src="${postImageUrl(p.imageUrl)}" alt=""></div>` : ''}
+      <div class="post-body">
+        <div class="post-item">${escapeHtml(p.itemName)} <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓' : '!'} ${imp.recycleLabel}</span></div>
+        ${p.funFact ? `<div class="post-fact">${escapeHtml(p.funFact)}</div>` : ''}
+        <div class="post-stats">
+          <div class="post-stat"><span class="num">${p.weightG}g</span><span class="lbl">Weight</span></div>
+          <div class="post-stat"><span class="num">${p.co2G}g</span><span class="lbl">CO2 saved</span></div>
+          <div class="post-stat"><span class="num accent">+${p.points}</span><span class="lbl">Points</span></div>
+        </div>
+        <div class="post-actions">
+          <button class="post-action-btn like-btn ${p.likedByMe ? 'liked' : ''}" data-post-id="${p.id}">
+            <span class="like-icon">${p.likedByMe ? '❤️' : '🤍'}</span> ${p.likeCount || 0}
+          </button>
+          <button class="post-action-btn comment-btn" data-post-id="${p.id}">
+            💬 ${p.commentCount || 0}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  async function renderFeed(){
+    const el = document.getElementById('feed-list');
+    el.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
+    const posts = await loadPosts();
+    if(posts.length === 0){
+      el.innerHTML = `<div class="empty-state"><div class="big">📸</div><p>No posts yet.<br>Be the first to share what you're recycling.</p><button class="btn primary" id="feed-empty-scan-btn">Take a photo</button></div>`;
+      document.getElementById('feed-empty-scan-btn').addEventListener('click', ()=>{
+        document.querySelector('.tab-btn[data-view="scan"]').click();
+      });
+      emojify(el);
+      return;
+    }
+
+    let friendSet = new Set();
+    if(session.token){
+      try{
+        const friends = await loadFriends();
+        friendSet = new Set(friends.map(f=>f.username));
+      }catch(e){}
+    }
+
+    if(friendSet.size > 0){
+      const friendPosts = posts.filter(p=>friendSet.has(p.username));
+      const otherPosts = posts.filter(p=>!friendSet.has(p.username));
+      el.innerHTML =
+        (friendPosts.length ? `<div class="section-label">From your friends</div>` + friendPosts.map(postCardHtml).join('') : '') +
+        (otherPosts.length ? `<div class="section-label">${friendPosts.length ? 'More from the community' : 'Community'}</div>` : '') +
+        otherPosts.map(postCardHtml).join('');
+    }else{
+      el.innerHTML = posts.map(postCardHtml).join('');
+    }
+    emojify(el);
+    bindPostActionButtons(el);
+  }
+
+  function bindPostActionButtons(container){
+    container.querySelectorAll('.like-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        btn.disabled = true;
+        try{
+          const data = await toggleLike(btn.dataset.postId);
+          btn.classList.toggle('liked', data.liked);
+          btn.querySelector('.like-icon').textContent = data.liked ? '❤️' : '🤍';
+          btn.lastChild.textContent = ' ' + data.likeCount;
+          emojify(btn);
+        }catch(e){
+          showToast("Couldn't update like — try again");
+        }
+        btn.disabled = false;
+      });
+    });
+    container.querySelectorAll('.comment-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.getElementById('comments-panel').style.display = 'flex';
+        renderCommentsPanel(btn.dataset.postId);
+      });
+    });
+  }
+
+  // ---------- Group events ----------
+  let joinedEvents = [];
+  async function loadJoinedEvents(){
+    try{
+      const r = await STORAGE.get('joinedEvents', false);
+      joinedEvents = r ? JSON.parse(r.value) : [];
+    }catch(e){ joinedEvents = []; }
+  }
+  async function saveJoinedEvents(){
+    try{ await STORAGE.set('joinedEvents', JSON.stringify(joinedEvents), false); }
+    catch(e){ console.error('save joined events failed', e); }
+  }
+  function eventsSectionHtml(){
+    return `
+      <div class="section-label" style="margin-top:26px;">Upcoming events</div>
+      ${EVENTS.map(ev=>{
+        const joined = joinedEvents.includes(ev.id);
+        return `<div class="event-card">
+          <div class="event-title">${escapeHtml(ev.title)}</div>
+          <div class="event-meta">📅 ${escapeHtml(ev.date)}</div>
+          <div class="event-meta">📍 ${escapeHtml(ev.location)} · ${ev.spots} spots</div>
+          <div class="event-actions">
+            <button class="btn ${joined ? '' : 'primary'} event-join-btn" data-id="${ev.id}">${joined ? 'Joined ✓' : 'Join'}</button>
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+  }
+  function bindEventButtons(){
+    document.querySelectorAll('.event-join-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.dataset.id;
+        if(joinedEvents.includes(id)) joinedEvents = joinedEvents.filter(x=>x!==id);
+        else joinedEvents.push(id);
+        await saveJoinedEvents();
+        renderBoard();
+      });
+    });
+  }
+
+  // ---------- Leaderboard ----------
+  let boardScope = 'global';
+  async function renderBoard(){
+    const el = document.getElementById('board-content');
+    await loadJoinedEvents();
+
+    el.innerHTML = `
+      <div class="board-toggle">
+        <button class="toggle-btn ${boardScope==='global'?'active':''}" data-scope="global">Global</button>
+        <button class="toggle-btn ${boardScope==='friends'?'active':''}" data-scope="friends">Friends</button>
+      </div>
+      <div id="board-list"><div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div></div>
+    ` + eventsSectionHtml();
+    document.querySelectorAll('.toggle-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        if(boardScope === btn.dataset.scope) return;
+        boardScope = btn.dataset.scope;
+        renderBoard();
+      });
+    });
+    bindEventButtons();
+    emojify(el);
+
+    const listEl = document.getElementById('board-list');
+    if(boardScope === 'friends' && !session.token){
+      listEl.innerHTML = `<div class="empty-state"><div class="big">🔒</div><p>Log in to see how you and your friends stack up.</p><button class="btn primary" id="board-login-btn">Log in / Sign up</button></div>`;
+      document.getElementById('board-login-btn').addEventListener('click', showAuthView);
+      emojify(listEl);
+      return;
+    }
+
+    const entries = await loadLeaderboard(boardScope);
+    if(!document.getElementById('board-list')) return;
+    if(entries.length === 0){
+      listEl.innerHTML = boardScope === 'friends'
+        ? `<div class="empty-state"><div class="big">🧑‍🤝‍🧑</div><p>No friends yet.<br>Add some from the friends icon up top.</p></div>`
+        : `<div class="empty-state"><div class="big">🏆</div><p>You're the first one here.<br>Scan something to take the top spot.</p></div>`;
+      emojify(listEl);
+      return;
+    }
+    listEl.innerHTML = entries.map((e,i)=>`
+      <div class="lb-row ${e.username===profile.username?'me':''}">
+        <div class="lb-rank">${i+1}</div>
+        <div class="lb-name">${escapeHtml(e.username)}${e.username===profile.username?' (you)':''}</div>
+        <div class="lb-pts">${e.points}</div>
+      </div>
+    `).join('');
+  }
+
+  // ---------- Profile ----------
+  function computeBadges(){
+    const b = [];
+    if(profile.totalScans>=1) b.push({icon:'🏷️', label:'First sort', sub:"You've logged your very first item."});
+    if(profile.totalScans>=10) b.push({icon:'📦', label:'10 scans', sub:'Ten items diverted from landfill.'});
+    if(profile.totalScans>=50) b.push({icon:'🏭', label:'50 scans', sub:'Fifty items and counting — serious impact.'});
+    if(profile.longestStreak>=3) b.push({icon:'🔥', label:'3-day streak', sub:'Three days in a row. Keep the chain going.'});
+    if(profile.longestStreak>=7) b.push({icon:'🔥', label:'Week streak', sub:'A full week of consistent sorting.'});
+    if(profile.longestStreak>=30) b.push({icon:'🔥', label:'30-day streak', sub:'Top-tier consistency. A month strong.'});
+    if(profile.totalPoints>=100) b.push({icon:'⭐', label:'100 pts', sub:'Triple digits on the scoreboard.'});
+    if(profile.totalPoints>=500) b.push({icon:'🌟', label:'500 pts', sub:'Halfway to a thousand points.'});
+    if(profile.totalPoints>=1000) b.push({icon:'💫', label:'1000 pts', sub:'Four figures of environmental impact.'});
+    return b;
+  }
+
+  function nextMilestone(points){
+    const steps = [100,500,1000,2000,5000,10000];
+    const found = steps.find(m=>m>points);
+    return found || (Math.ceil((points+500)/500)*500);
+  }
+
+  function challengesHtml(){
+    return `
+      <div class="section-label">Challenges</div>
+      ${CHALLENGES.map(c=>{
+        const val = metricValue(profile, c.metric);
+        const pct = Math.min(100, Math.round((val/c.target)*100));
+        const complete = val >= c.target;
+        return `<div class="challenge-card ${complete ? 'complete' : ''}">
+          <div class="challenge-title">${escapeHtml(c.title)}${complete ? ' ✓' : ''}</div>
+          <div class="challenge-desc">${escapeHtml(c.desc)}</div>
+          <div class="challenge-track"><div class="challenge-fill" style="width:${pct}%"></div></div>
+          <div class="challenge-progress">${Math.min(val,c.target)} / ${c.target}</div>
+        </div>`;
+      }).join('')}
+
+      <div class="section-label">Sponsored challenges</div>
+      ${SPONSOR_CHALLENGES.map(s=>{
+        const val = metricValue(profile, s.metric);
+        const pct = Math.min(100, Math.round((val/s.target)*100));
+        return `<div class="sponsor-card">
+          <div class="sponsor-banner" style="background:${s.color}">${s.sponsor}</div>
+          <div class="sponsor-body">
+            <div class="sponsor-desc">${escapeHtml(s.desc)}</div>
+            <div class="challenge-track"><div class="challenge-fill" style="width:${pct}%"></div></div>
+            <div class="challenge-progress">${Math.min(val,s.target)} / ${s.target}</div>
+            <div class="sponsor-reward">🎁 ${escapeHtml(s.reward)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+  }
+
+  function binsCardInnerHtml(sortedBins){
+    if(!sortedBins){
+      return `
+        <p style="color:var(--ink-dim); font-size:13px; margin-bottom:12px;">Find the closest drop-off points using your current location.</p>
+        <button class="btn primary" id="find-bins-btn" style="width:100%">Use my location</button>
+      `;
+    }
+    return sortedBins.map(b=>`
+      <div class="bin-row">
+        <div class="bin-name">${escapeHtml(b.name)}</div>
+        <div class="bin-dist">${b.dist.toFixed(1)} km · <a class="bin-link" href="https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}" target="_blank" rel="noopener">Directions</a></div>
+      </div>
+    `).join('');
+  }
+
+  function bindFindBinsButton(){
+    const btn = document.getElementById('find-bins-btn');
+    if(!btn) return;
+    btn.addEventListener('click', ()=>{
+      if(!navigator.geolocation){ showToast('Location is not available on this device'); return; }
+      btn.disabled = true;
+      btn.textContent = 'Locating…';
+      navigator.geolocation.getCurrentPosition(
+        (pos)=>{
+          const {latitude, longitude} = pos.coords;
+          const sorted = BINS
+            .map(b=>({...b, dist: haversineKm(latitude, longitude, b.lat, b.lng)}))
+            .sort((a,b)=>a.dist-b.dist)
+            .slice(0,5);
+          document.getElementById('bins-card').innerHTML = binsCardInnerHtml(sorted);
+        },
+        ()=>{
+          showToast("Couldn't get your location — check permissions");
+          btn.disabled = false;
+          btn.textContent = 'Use my location';
+        }
+      );
+    });
+  }
+
+  function renderProfile(){
+    const el = document.getElementById('profile-content');
+    const badges = computeBadges();
+    const cats = Object.entries(profile.byCategory).sort((a,b)=>b[1]-a[1]);
+    const maxCat = cats.length ? cats[0][1] : 1;
+    const ringPct = Math.round((Math.min(profile.currentStreak,7)/7)*100);
+    const nextGoal = nextMilestone(profile.totalPoints);
+    const goalPct = Math.min(100, Math.round((profile.totalPoints/nextGoal)*100));
+
+    el.innerHTML = `
+      <div class="profile-hero">
+        <div class="profile-name">${profile.username ? escapeHtml(profile.username) : 'Guest'}</div>
+        ${!session.token ? `
+          <p style="color:var(--ink-dim); font-size:12.5px; margin:6px 0 0;">
+            Browsing as a guest — your progress stays on this device only.
+            <button class="auth-switch" id="profile-login-btn" type="button" style="display:inline; margin:0; padding:0; width:auto;">Log in to save it</button>
+          </p>
+        ` : ''}
+      </div>
+
+      <div class="streak-card">
+        <div class="streak-top">
+          <div class="streak-ring" style="background:conic-gradient(var(--sun) 0% ${ringPct}%, rgba(255,255,255,0.2) ${ringPct}% 100%)">
+            <div class="streak-ring-inner">🔥</div>
+          </div>
+          <div class="streak-copy">
+            <div class="streak-title">${profile.currentStreak>0 ? 'Growing steady' : 'Ready to start'}</div>
+            <div class="streak-sub">${profile.currentStreak>0 ? `You're on a ${profile.currentStreak}-day streak. Longest run so far: ${profile.longestStreak} days.` : 'Scan an item today to start your streak.'}</div>
+          </div>
+        </div>
+        <div class="streak-bottom">
+          <span class="big">${profile.currentStreak}</span>
+          <span class="cap">Day streak</span>
+        </div>
+      </div>
+
+      <div class="profile-grid">
+        <div class="profile-card"><div class="num">${profile.totalPoints}</div><div class="lbl">Total points</div></div>
+        <div class="profile-card"><div class="num accent">${profile.totalScans}</div><div class="lbl">Items sorted</div></div>
+        <div class="profile-card"><div class="num">${profile.currentStreak}</div><div class="lbl">Current streak</div></div>
+        <div class="profile-card"><div class="num accent">${profile.longestStreak}</div><div class="lbl">Longest streak</div></div>
+      </div>
+
+      <div class="section-label">Next milestone</div>
+      <div class="goal-row">
+        <div class="goal-label">Points to next milestone</div>
+        <div class="goal-value">${profile.totalPoints} / ${nextGoal}</div>
+      </div>
+      <div class="goal-track"><div class="goal-fill" style="width:${goalPct}%"></div></div>
+
+      ${challengesHtml()}
+
+      <div class="section-label">By material</div>
+      ${cats.length ? cats.map(([cat,count])=>{
+        const imp = IMPACT[cat];
+        const pct = Math.round((count/maxCat)*100);
+        return `<div class="cat-bar-row">
+          <div class="cat-name">${imp.icon} ${imp.label}</div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+          <div class="cat-bar-count">${count}</div>
+        </div>`;
+      }).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Nothing sorted yet.</p>`}
+
+      <div class="section-label">Milestones</div>
+      ${badges.length ? badges.map(b=>`
+        <div class="milestone-row">
+          <div class="milestone-badge">${b.icon}</div>
+          <div class="milestone-copy">
+            <div class="milestone-title">${b.label}</div>
+            <div class="milestone-sub">${b.sub}</div>
+          </div>
+        </div>
+      `).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Scan items to unlock milestones.</p>`}
+
+      <div class="section-label">Nearby recycling bins</div>
+      <div class="bins-card" id="bins-card">${binsCardInnerHtml(null)}</div>
+    `;
+    bindFindBinsButton();
+    const loginBtn = document.getElementById('profile-login-btn');
+    if(loginBtn) loginBtn.addEventListener('click', showAuthView);
+    emojify(el);
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+      if(btn.dataset.view === 'feed') renderFeed();
+      if(btn.dataset.view === 'board') renderBoard();
+      if(btn.dataset.view === 'profile') renderProfile();
+    });
+  });
+
+  // ---------- Friends panel ----------
+  async function renderFriendsPanel(){
+    const body = document.getElementById('friends-body');
+    if(!session.token){
+      body.innerHTML = `
+        <p style="color:var(--ink-dim); font-size:13px; line-height:1.5; margin-bottom:14px;">
+          Log in or create an account to add friends and see them on the leaderboard.
+        </p>
+        <button class="btn primary" id="friends-login-btn" style="width:100%;">Log in / Sign up</button>
+      `;
+      document.getElementById('friends-login-btn').addEventListener('click', ()=>{
+        document.getElementById('friends-panel').style.display = 'none';
+        showAuthView();
+      });
+      return;
+    }
+    body.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
+    const friends = await loadFriends();
+    body.innerHTML = `
+      <div class="add-friend-row">
+        <input id="add-friend-input" placeholder="Add by username" maxlength="24">
+        <button class="btn primary" id="add-friend-btn">Add</button>
+      </div>
+      <div id="add-friend-error" class="auth-error" style="display:none;"></div>
+      ${friends.length ? friends.map(f=>`
+        <div class="friend-row">
+          <div class="friend-name">${escapeHtml(f.username)}</div>
+          <div class="friend-pts">${f.points} pts</div>
+          <button class="friend-remove" data-username="${escapeHtml(f.username)}">Remove</button>
+        </div>
+      `).join('') : `<p style="color:var(--ink-dim); font-size:13px; padding:14px 0;">No friends yet — add one above.</p>`}
+      <button class="auth-switch" id="logout-btn" type="button" style="margin-top:18px;">Log out</button>
+    `;
+    document.getElementById('add-friend-btn').addEventListener('click', async ()=>{
+      const input = document.getElementById('add-friend-input');
+      const errEl = document.getElementById('add-friend-error');
+      const val = input.value.trim();
+      errEl.style.display = 'none';
+      if(!val) return;
+      try{
+        await addFriend(val);
+        renderFriendsPanel();
+      }catch(e){
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+      }
+    });
+    body.querySelectorAll('.friend-remove').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        await removeFriend(btn.dataset.username);
+        renderFriendsPanel();
+      });
+    });
+    document.getElementById('logout-btn').addEventListener('click', async ()=>{
+      await apiLogout();
+      session = {token:null, username:null};
+      await saveSession();
+      await setGuestOptIn(false);
+      document.getElementById('friends-panel').style.display = 'none';
+      showAuthView();
+    });
+  }
+
+  document.getElementById('friends-btn').addEventListener('click', ()=>{
+    document.getElementById('friends-panel').style.display = 'flex';
+    renderFriendsPanel();
+  });
+  document.getElementById('friends-close').addEventListener('click', ()=>{
+    document.getElementById('friends-panel').style.display = 'none';
+  });
+
+  // ---------- Comments panel ----------
+  async function renderCommentsPanel(postId){
+    const body = document.getElementById('comments-body');
+    body.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
+    const comments = await loadComments(postId);
+    body.innerHTML = `
+      <div id="comments-list">
+        ${comments.length ? comments.map(c=>`
+          <div class="comment-row">
+            <div class="comment-avatar">${(c.username||'?').trim().charAt(0).toUpperCase()}</div>
+            <div class="comment-body">
+              <span class="comment-name">${escapeHtml(c.username)}</span>${c.isGuest ? ' <span class="guest-tag">Guest</span>' : ''}<span class="comment-time">${timeAgo(c.ts)}</span>
+              <div class="comment-text">${escapeHtml(c.text)}</div>
+            </div>
+          </div>
+        `).join('') : `<p style="color:var(--ink-dim); font-size:13px; padding:14px 0;">No comments yet — be the first to say something.</p>`}
+      </div>
+      <div id="add-comment-error" class="auth-error" style="display:none;"></div>
+      <div class="add-comment-row">
+        <input id="add-comment-input" placeholder="Write a comment…" maxlength="280">
+        <button class="btn primary" id="add-comment-btn">Post</button>
+      </div>
+    `;
+    emojify(body);
+    document.getElementById('add-comment-btn').addEventListener('click', async ()=>{
+      const input = document.getElementById('add-comment-input');
+      const errEl = document.getElementById('add-comment-error');
+      const text = input.value.trim();
+      errEl.style.display = 'none';
+      if(!text) return;
+      try{
+        await addComment(postId, text);
+        input.value = '';
+        renderCommentsPanel(postId);
+        renderFeed();
+      }catch(e){
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+      }
+    });
+  }
+
+  document.getElementById('comments-close').addEventListener('click', ()=>{
+    document.getElementById('comments-panel').style.display = 'none';
+  });
+
+  // ---------- Auth ----------
+  let authMode = 'login';
+
+  function showAuthView(){
+    document.getElementById('auth-view').style.display = 'flex';
+    document.getElementById('app-shell').style.display = 'none';
+  }
+  function showAppShell(){
+    document.getElementById('auth-view').style.display = 'none';
+    document.getElementById('app-shell').style.display = 'flex';
+  }
+
+  document.getElementById('auth-switch').addEventListener('click', ()=>{
+    authMode = authMode === 'login' ? 'signup' : 'login';
+    document.getElementById('auth-submit').textContent = authMode === 'login' ? 'Log in' : 'Sign up';
+    document.getElementById('auth-sub').textContent = authMode === 'login'
+      ? 'Log in to add friends and appear on the leaderboard.'
+      : 'Create an account to add friends and appear on the leaderboard.';
+    document.getElementById('auth-switch').textContent = authMode === 'login'
+      ? 'Need an account? Sign up' : 'Already have an account? Log in';
+    document.getElementById('auth-error').style.display = 'none';
+  });
+
+  document.getElementById('auth-submit').addEventListener('click', async ()=>{
+    const username = document.getElementById('auth-username').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const errEl = document.getElementById('auth-error');
+    const submitBtn = document.getElementById('auth-submit');
+    errEl.style.display = 'none';
+    if(!username || !password){
+      errEl.textContent = 'Enter a username and password.';
+      errEl.style.display = 'block';
+      return;
+    }
+    submitBtn.disabled = true;
+    try{
+      const data = authMode === 'login' ? await apiLogin(username, password) : await apiSignup(username, password);
+      session = {token: data.token, username: data.username};
+      await saveSession();
+      await setGuestOptIn(false);
+      profile = Object.assign({}, data.profile, {username: data.username});
+      showAppShell();
+      renderFeed();
+    }catch(e){
+      errEl.textContent = e.message;
+      errEl.style.display = 'block';
+    }
+    submitBtn.disabled = false;
+  });
+
+  document.getElementById('auth-guest-btn').addEventListener('click', async ()=>{
+    await setGuestOptIn(true);
+    await loadProfile();
+    showAppShell();
+    renderFeed();
+  });
+
+  // ---------- Init ----------
+  (async function init(){
+    await ensureGuestTag();
+    await loadSession();
+    if(session.token){
+      try{
+        await loadProfile();
+        showAppShell();
+        renderFeed();
+        return;
+      }catch(e){
+        session = {token:null, username:null};
+        await saveSession();
+      }
+    }
+    if(await hasGuestOptIn()){
+      await loadProfile();
+      showAppShell();
+      renderFeed();
+    }else{
+      showAuthView();
+    }
+  })();
+
+})();
+</script>
+</body>
+</html>

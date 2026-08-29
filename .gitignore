@@ -1,4 +1,22 @@
+# Root backend (scorer/agent)
 .venv/
 __pycache__/
 *.pyc
 .env
+
+# Python / server
+server/.venv/
+server/__pycache__/
+server/*.db
+server/uploads/
+server/.env
+
+# Node / mobile
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/*.log
+
+# OS
+.DS_Store
+Thumbs.db

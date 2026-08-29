@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "SORT/ED",
+    "slug": "sorted",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "sorted",
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "SORT/ED needs camera access to photograph items you're recycling.",
+        "NSLocationWhenInUseUsageDescription": "SORT/ED uses your location to find nearby recycling bins."
+      }
+    },
+    "android": {
+      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "SORT/ED needs camera access to photograph items you're recycling."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "SORT/ED uses your location to find nearby recycling bins."
+        }
+      ]
+    ]
+  }
+}

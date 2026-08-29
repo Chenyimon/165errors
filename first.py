@@ -1,2 +1,0 @@
-print("cock")
-print("penis")
