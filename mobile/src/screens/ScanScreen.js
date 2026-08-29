@@ -9,12 +9,13 @@ import { PREP_TIPS } from '../lib/content';
 import { prepareImageForUpload } from '../lib/imagePrep';
 import { classifyImage, createPost } from '../lib/api';
 import { useProfile } from '../lib/ProfileContext';
-import { updateStreak, applyStreakBonus } from '../lib/profileStore';
+import { updateStreak, applyStreakBonus, computeBadges } from '../lib/profileStore';
 import { showToast } from '../lib/toast';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 import Tag from '../components/Tag';
 import RecycleBadge from '../components/RecycleBadge';
+import Confetti from '../components/Confetti';
 
 const ANALYZING_MESSAGES = [
   'Hold up… saving the Earth. 🌎',
@@ -62,6 +63,7 @@ export default function ScanScreen() {
   const [checkedTips, setCheckedTips] = useState([]);
   const [unclearUri, setUnclearUri] = useState(null);
   const [captionText, setCaptionText] = useState('');
+  const [celebrate, setCelebrate] = useState(0);
 
   async function startScan() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -166,11 +168,24 @@ export default function ScanScreen() {
         guestTag,
       });
 
+      const badgesBefore = computeBadges(profile);
+      const badgesAfter = computeBadges(nextProfile);
+      const newBadges = badgesAfter.filter((a) => !badgesBefore.some((b) => b.label === a.label));
+
       clearInterval(msgTimer);
       setPending(null);
       setCheckedTips([]);
       setStage('idle');
-      showToast('Posted to the feed!');
+      if (newBadges.length) {
+        setCelebrate((c) => c + 1);
+        showToast(`🎉 New milestone: ${newBadges[0].label}!`);
+        // Give the confetti a moment to actually be seen before the tab
+        // switch carries it off-screen (bottom-tabs keeps screens mounted,
+        // but only the focused one is visible).
+        await new Promise((r) => setTimeout(r, 1100));
+      } else {
+        showToast('Posted to the feed!');
+      }
       navigation.navigate('Feed');
     } catch (err) {
       console.error(err);
@@ -303,6 +318,7 @@ export default function ScanScreen() {
           </View>
         )}
       </View>
+      <Confetti trigger={celebrate} />
     </View>
   );
 }

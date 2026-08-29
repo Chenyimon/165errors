@@ -4,7 +4,7 @@ export const IMPACT = {
   metal: { co2: 4.0, label: 'Metal', icon: '🥫', tag: 'terracotta', recyclable: true, recycleLabel: 'Recyclable' },
   paper: { co2: 0.9, label: 'Paper', icon: '📄', tag: 'sage', recyclable: true, recycleLabel: 'Recyclable' },
   compost: { co2: 0.4, label: 'Compost', icon: '🍂', tag: 'compost', recyclable: true, recycleLabel: 'Compostable' },
-  other: { co2: 0.5, label: 'Other', icon: '♻️', tag: 'neutral', recyclable: false, recycleLabel: 'Check locally' },
+  other: { co2: 0.5, label: 'Other', icon: '♻️', tag: 'neutral', recyclable: false, recycleLabel: 'Non-recyclables' },
 
   // Not blue-bin items, but they have real routes in Singapore and score
   // highly - a battery is the most harmful thing most people throw away.

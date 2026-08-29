@@ -5,11 +5,13 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { colors } from '../theme';
 import { getPosts, getFriends } from '../lib/api';
 import { useProfile } from '../lib/ProfileContext';
+import { interleaveFacts } from '../lib/envFacts';
 import AppHeader from '../components/AppHeader';
 import PostCard from '../components/PostCard';
 import Button from '../components/Button';
 import Emoji from '../components/Emoji';
 import CommentsModal from '../components/CommentsModal';
+import FactCard from '../components/FactCard';
 
 export default function FeedScreen() {
   const navigation = useNavigation();
@@ -39,7 +41,7 @@ export default function FeedScreen() {
         const next = [];
         if (friendPosts.length) {
           next.push({ type: 'header', key: 'h-friends', label: 'From your friends' });
-          friendPosts.forEach((p) => next.push({ type: 'post', key: p.id, post: p }));
+          next.push(...interleaveFacts(friendPosts, 'friends'));
         }
         if (otherPosts.length) {
           next.push({
@@ -47,11 +49,11 @@ export default function FeedScreen() {
             key: 'h-other',
             label: friendPosts.length ? 'More from the community' : 'Community',
           });
-          otherPosts.forEach((p) => next.push({ type: 'post', key: p.id, post: p }));
+          next.push(...interleaveFacts(otherPosts, 'other'));
         }
         setItems(next);
       } else {
-        setItems(posts.map((p) => ({ type: 'post', key: p.id, post: p })));
+        setItems(interleaveFacts(posts, 'flat'));
       }
     } catch (e) {
       console.warn('feed load failed', e);
@@ -78,13 +80,11 @@ export default function FeedScreen() {
         data={items}
         keyExtractor={(item) => item.key}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) =>
-          item.type === 'header' ? (
-            <Text style={styles.sectionLabel}>{item.label}</Text>
-          ) : (
-            <PostCard post={item.post} onCommentPress={setActivePostId} onDeleted={load} />
-          )
-        }
+        renderItem={({ item }) => {
+          if (item.type === 'header') return <Text style={styles.sectionLabel}>{item.label}</Text>;
+          if (item.type === 'fact') return <FactCard fact={item.fact} />;
+          return <PostCard post={item.post} onCommentPress={setActivePostId} onDeleted={load} />;
+        }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.forest} />}
         ListHeaderComponent={<Text style={styles.title}>Community feed</Text>}
         ListEmptyComponent={

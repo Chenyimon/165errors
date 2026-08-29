@@ -235,7 +235,10 @@
   .post-stat .num{display:block; font-weight:800; font-size:15px; color:var(--ink);}
   .post-stat .num.accent{color:var(--terracotta);}
   .post-stat .lbl{font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-dim); margin-top:2px;}
-  .post-actions{display:flex; gap:8px; margin-top:12px;}
+  .post-divider{display:flex; align-items:center; gap:8px; margin:12px 0 10px;}
+  .post-divider::before, .post-divider::after{content:''; flex:1; height:1px; background:var(--border);}
+  .post-divider span{font-size:12px; opacity:0.7;}
+  .post-actions{display:flex; gap:8px;}
   .post-action-btn{
     display:flex; align-items:center; gap:6px;
     background:var(--surface-alt); border:1.5px solid var(--border); border-radius:20px;
@@ -401,7 +404,7 @@
   .form-card input:focus{outline:none; border-color:var(--forest);}
 
   /* ---------- Profile ---------- */
-  .profile-hero{text-align:center; padding:10px 0 22px;}
+  .profile-hero{position:relative; text-align:center; padding:10px 0 22px;}
   .profile-name{font-family:'Fraunces',serif; font-weight:700; font-size:22px; color:var(--ink);}
   .profile-avatar-wrap{position:relative; width:88px; height:88px; margin:0 auto 14px;}
   .profile-avatar{
@@ -416,8 +419,34 @@
     justify-content:center; cursor:pointer; font-size:14px;
   }
 
+  /* Ed the mascot */
+  .ed-greeting{display:flex; align-items:flex-end; gap:0; margin-bottom:18px;}
+  .ed-greeting-icon{width:64px; height:79px; flex-shrink:0;}
+  .ed-bubble{
+    position:relative; background:var(--surface-alt); border:1.5px solid var(--border);
+    border-radius:16px; padding:12px 14px; font-size:13px; color:var(--ink); line-height:1.45;
+    margin-left:6px; margin-bottom:14px; flex:1;
+  }
+  .ed-bubble::before{
+    content:''; position:absolute; left:-7px; bottom:14px; width:12px; height:12px;
+    background:var(--surface-alt); border-left:1.5px solid var(--border); border-bottom:1.5px solid var(--border);
+    transform:rotate(45deg);
+  }
+
+  /* Confetti */
+  .confetti-burst{position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden;}
+  .confetti-piece{
+    position:absolute; top:-12px; width:8px; height:14px; border-radius:2px;
+    animation:confetti-fall 1.4s ease-in forwards;
+  }
+  @keyframes confetti-fall{
+    0%{ transform:translate(0,0) rotate(0deg); opacity:1; }
+    100%{ transform:translate(var(--dx), 100vh) rotate(var(--rot)); opacity:0; }
+  }
+
   /* Points hero */
   .points-hero{
+    position:relative;
     background:var(--forest); border-radius:var(--radius);
     padding:26px 22px; color:#fff; margin-bottom:22px; text-align:center;
     box-shadow:0 10px 24px rgba(32,54,42,0.28);
@@ -425,6 +454,12 @@
   .points-hero-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:rgba(255,255,255,0.65);}
   .points-hero-num{font-family:'Fraunces',serif; font-weight:700; font-size:48px; line-height:1.15; margin-top:4px;}
   .points-hero-sub{font-size:12.5px; color:rgba(255,255,255,0.72); margin-top:8px; line-height:1.5;}
+  .points-hero-medal-btn{
+    position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:50%;
+    background:rgba(255,255,255,0.15); border:none; font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .points-hero-medal-btn:active{background:rgba(255,255,255,0.25);}
 
   .profile-grid{
     display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:24px;
@@ -441,6 +476,23 @@
     font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--ink-dim);
     margin:22px 0 10px;
   }
+  .section-divider{display:flex; align-items:center; gap:10px; margin:30px 0 2px;}
+  .section-divider::before, .section-divider::after{content:''; flex:1; height:1px; background:var(--border);}
+  .section-divider span{font-size:15px; line-height:1; flex-shrink:0;}
+  .section-divider + .section-label{margin-top:8px;}
+
+  /* Botanical page flourishes */
+  .leaf-decor{position:absolute; opacity:0.5; pointer-events:none; font-size:22px;}
+  .fact-card{
+    display:flex; gap:12px; align-items:flex-start; background:var(--surface-alt);
+    border:1.5px dashed var(--sage-deep); border-radius:var(--radius); padding:14px 16px; margin:16px 0;
+  }
+  .fact-card-icon{font-size:22px; flex-shrink:0; line-height:1.3;}
+  .fact-card-label{
+    font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px;
+    color:var(--sage-deep); margin-bottom:3px;
+  }
+  .fact-card-text{font-size:13px; color:var(--ink); line-height:1.5;}
 
   /* Monthly-goal style progress bar */
   .goal-row{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:8px;}
@@ -589,6 +641,52 @@
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="ed-full" viewBox="0 0 200 246">
+      <ellipse cx="100" cy="234" rx="52" ry="7" fill="#20362A" opacity="0.12"/>
+      <rect x="97" y="8" width="6" height="18" rx="3" fill="#C6D3BA"/>
+      <circle cx="100" cy="8" r="7" fill="#6B3B57"/>
+      <rect x="58" y="26" width="84" height="58" rx="20" fill="#5C7359"/>
+      <rect x="70" y="36" width="60" height="18" rx="9" fill="#C6D3BA"/>
+      <circle cx="83" cy="55" r="14" fill="#FDFCF7"/>
+      <circle cx="117" cy="55" r="14" fill="#FDFCF7"/>
+      <circle cx="85" cy="57" r="6.5" fill="#20362A"/>
+      <circle cx="119" cy="57" r="6.5" fill="#20362A"/>
+      <circle cx="87.5" cy="54.5" r="2" fill="#FDFCF7"/>
+      <circle cx="121.5" cy="54.5" r="2" fill="#FDFCF7"/>
+      <rect x="88" y="84" width="24" height="16" rx="5" fill="#C6D3BA"/>
+      <rect x="42" y="98" width="116" height="92" rx="22" fill="#5C7359"/>
+      <circle cx="52" cy="106" r="3.5" fill="#6B3B57"/>
+      <circle cx="148" cy="106" r="3.5" fill="#6B3B57"/>
+      <circle cx="52" cy="182" r="3.5" fill="#6B3B57"/>
+      <circle cx="148" cy="182" r="3.5" fill="#6B3B57"/>
+      <rect x="63" y="114" width="74" height="48" rx="14" fill="#C6D3BA"/>
+      <g transform="translate(100,138)">
+        <g transform="rotate(0)"><polygon points="0,-16 9,5 -9,5" fill="#E7A94C"/></g>
+        <g transform="rotate(120)"><polygon points="0,-16 9,5 -9,5" fill="#E7A94C"/></g>
+        <g transform="rotate(240)"><polygon points="0,-16 9,5 -9,5" fill="#E7A94C"/></g>
+        <circle r="7" fill="#C98A32"/>
+      </g>
+      <rect x="20" y="108" width="22" height="48" rx="11" fill="#C6D3BA"/>
+      <rect x="8" y="150" width="22" height="42" rx="11" fill="#5C7359"/>
+      <rect x="0" y="186" width="14" height="14" rx="4" fill="#C6D3BA"/>
+      <rect x="10" y="192" width="14" height="14" rx="4" fill="#C6D3BA"/>
+      <rect x="20" y="186" width="14" height="14" rx="4" fill="#C6D3BA"/>
+      <rect x="158" y="108" width="22" height="48" rx="11" fill="#C6D3BA"/>
+      <rect x="170" y="150" width="22" height="42" rx="11" fill="#5C7359"/>
+      <rect x="166" y="186" width="14" height="14" rx="4" fill="#C6D3BA"/>
+      <rect x="176" y="192" width="14" height="14" rx="4" fill="#C6D3BA"/>
+      <rect x="186" y="186" width="14" height="14" rx="4" fill="#C6D3BA"/>
+      <rect x="62" y="188" width="32" height="38" rx="10" fill="#5C7359"/>
+      <rect x="106" y="188" width="32" height="38" rx="10" fill="#5C7359"/>
+      <rect x="62" y="212" width="32" height="8" rx="4" fill="#C6D3BA"/>
+      <rect x="106" y="212" width="32" height="8" rx="4" fill="#C6D3BA"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div id="app">
 
   <div id="auth-view" class="auth-view">
@@ -748,6 +846,16 @@
     </div>
   </div>
 
+  <div id="medals-panel" class="panel-overlay" style="display:none;">
+    <div class="panel-sheet">
+      <div class="panel-header">
+        <div class="panel-title">Medals</div>
+        <button class="panel-close" id="medals-close" type="button">✕</button>
+      </div>
+      <div id="medals-body"></div>
+    </div>
+  </div>
+
   </div>
 
   <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
@@ -775,7 +883,7 @@
     metal:{co2:4.0, label:'Metal', icon:'🥫', tag:'terracotta', recyclable:true, recycleLabel:'Recyclable'},
     paper:{co2:0.9, label:'Paper', icon:'📄', tag:'sage', recyclable:true, recycleLabel:'Recyclable'},
     compost:{co2:0.4, label:'Compost', icon:'🍂', tag:'compost', recyclable:true, recycleLabel:'Compostable'},
-    other:{co2:0.5, label:'Other', icon:'♻️', tag:'neutral', recyclable:false, recycleLabel:'Check locally'}
+    other:{co2:0.5, label:'Other', icon:'♻️', tag:'neutral', recyclable:false, recycleLabel:'Non-recyclables'}
   };
   const SIZE_G = {small:15, medium:80, large:300};
 
@@ -1171,6 +1279,34 @@
     "Scanning the good you've done…",
     'Calculating how much waste you saved…'
   ];
+
+  const ENV_FACTS = [
+    'Recycling one aluminum can saves enough energy to run a TV for three hours.',
+    'It takes 500+ years for a plastic bottle to decompose in a landfill.',
+    'Glass can be recycled endlessly without ever losing quality or purity.',
+    'Recycling one ton of paper saves about 17 trees.',
+    'The ocean gains roughly 8 million tons of plastic waste every year.',
+    'E-waste is the fastest-growing waste stream on the planet.',
+    'Composting food scraps can cut your household trash by up to 30%.',
+    'A single mature tree can absorb up to 48 pounds of CO2 a year.',
+    'Recycled steel takes about 75% less energy to produce than new steel.',
+    'Only around 9% of all plastic ever made has actually been recycled.',
+    'Rechargeable batteries can be reused hundreds of times before they need recycling.',
+    'Textile waste takes up more landfill space than almost any other material.'
+  ];
+  function factCardHtml(){
+    const fact = ENV_FACTS[Math.floor(Math.random()*ENV_FACTS.length)];
+    return `<div class="fact-card"><div class="fact-card-icon">🌍</div><div><div class="fact-card-label">Did you know?</div><div class="fact-card-text">${escapeHtml(fact)}</div></div></div>`;
+  }
+  function interleaveFacts(cardsHtml){
+    const out = [];
+    cardsHtml.forEach((html, i)=>{
+      out.push(html);
+      if((i+1) % 4 === 0) out.push(factCardHtml());
+    });
+    return out.join('');
+  }
+
   async function handleFile(file){
     document.getElementById('scan-idle').style.display = 'none';
     document.getElementById('scan-reveal').style.display = 'none';
@@ -1325,12 +1461,16 @@
       if(msgEl) msgEl.textContent = postingMsgs[msgIdx];
     }, 1100);
 
+    const badgesBefore = computeBadges({
+      totalScans: profile.totalScans, longestStreak: profile.longestStreak, totalPoints: profile.totalPoints
+    });
     updateStreak();
     const finalPoints = applyStreakBonus(pending.points);
     profile.totalPoints += finalPoints;
     profile.totalScans += 1;
     profile.byCategory[pending.category] = (profile.byCategory[pending.category]||0)+1;
     await saveProfile();
+    const newBadges = computeBadges(profile).filter(a=>!badgesBefore.some(b=>b.label===a.label));
 
     try{
       const form = new FormData();
@@ -1351,7 +1491,12 @@
 
       clearInterval(msgTimer);
       resetScanView();
-      showToast('Posted to the feed!');
+      if(newBadges.length){
+        celebrate();
+        showToast(`🎉 New milestone: ${newBadges[0].label}!`);
+      }else{
+        showToast('Posted to the feed!');
+      }
       document.querySelector('.tab-btn[data-view="feed"]').click();
     }catch(err){
       console.error(err);
@@ -1394,6 +1539,12 @@
     return d.innerHTML;
   }
 
+  // A leafy divider used to break up the You page into sections — purely
+  // decorative, distinct from the plain .section-label used elsewhere.
+  function sectionDivider(text){
+    return `<div class="section-divider"><span>🌿</span></div><div class="section-label">${text}</div>`;
+  }
+
   // ---------- Feed ----------
   function isMyPost(p){
     if(session.token) return p.username === profile.username;
@@ -1425,6 +1576,7 @@
           <div class="post-stat"><span class="num">${p.co2G}g</span><span class="lbl">CO2 saved</span></div>
           <div class="post-stat"><span class="num accent">+${p.points}</span><span class="lbl">Points</span></div>
         </div>
+        <div class="post-divider"><span>🌱</span></div>
         <div class="post-actions">
           <button class="post-action-btn like-btn ${p.likedByMe ? 'liked' : ''}" data-post-id="${p.id}">
             <span class="like-icon">${p.likedByMe ? '❤️' : '🤍'}</span> ${p.likeCount || 0}
@@ -1462,11 +1614,11 @@
       const friendPosts = posts.filter(p=>friendSet.has(p.username));
       const otherPosts = posts.filter(p=>!friendSet.has(p.username));
       el.innerHTML =
-        (friendPosts.length ? `<div class="section-label">From your friends</div>` + friendPosts.map(postCardHtml).join('') : '') +
+        (friendPosts.length ? `<div class="section-label">From your friends</div>` + interleaveFacts(friendPosts.map(postCardHtml)) : '') +
         (otherPosts.length ? `<div class="section-label">${friendPosts.length ? 'More from the community' : 'Community'}</div>` : '') +
-        otherPosts.map(postCardHtml).join('');
+        interleaveFacts(otherPosts.map(postCardHtml));
     }else{
-      el.innerHTML = posts.map(postCardHtml).join('');
+      el.innerHTML = interleaveFacts(posts.map(postCardHtml));
     }
     emojify(el);
     bindPostActionButtons(el);
@@ -1607,6 +1759,10 @@
     document.getElementById('day-panel').style.display = 'none';
   });
 
+  document.getElementById('medals-close').addEventListener('click', ()=>{
+    document.getElementById('medals-panel').style.display = 'none';
+  });
+
   // ---------- Group events ----------
   let joinedEvents = [];
   async function loadJoinedEvents(){
@@ -1701,17 +1857,18 @@
   }
 
   // ---------- Profile ----------
-  function computeBadges(){
+  function computeBadges(p){
+    p = p || profile;
     const b = [];
-    if(profile.totalScans>=1) b.push({icon:'🏷️', label:'First sort', sub:"You've logged your very first item."});
-    if(profile.totalScans>=10) b.push({icon:'📦', label:'10 scans', sub:'Ten items diverted from landfill.'});
-    if(profile.totalScans>=50) b.push({icon:'🏭', label:'50 scans', sub:'Fifty items and counting — serious impact.'});
-    if(profile.longestStreak>=3) b.push({icon:'🔥', label:'3-day streak', sub:'Three days in a row. Keep the chain going.'});
-    if(profile.longestStreak>=7) b.push({icon:'🔥', label:'Week streak', sub:'A full week of consistent sorting.'});
-    if(profile.longestStreak>=30) b.push({icon:'🔥', label:'30-day streak', sub:'Top-tier consistency. A month strong.'});
-    if(profile.totalPoints>=100) b.push({icon:'⭐', label:'100 pts', sub:'Triple digits on the scoreboard.'});
-    if(profile.totalPoints>=500) b.push({icon:'🌟', label:'500 pts', sub:'Halfway to a thousand points.'});
-    if(profile.totalPoints>=1000) b.push({icon:'💫', label:'1000 pts', sub:'Four figures of environmental impact.'});
+    if(p.totalScans>=1) b.push({icon:'🏷️', label:'First sort', sub:"You've logged your very first item."});
+    if(p.totalScans>=10) b.push({icon:'📦', label:'10 scans', sub:'Ten items diverted from landfill.'});
+    if(p.totalScans>=50) b.push({icon:'🏭', label:'50 scans', sub:'Fifty items and counting — serious impact.'});
+    if(p.longestStreak>=3) b.push({icon:'🔥', label:'3-day streak', sub:'Three days in a row. Keep the chain going.'});
+    if(p.longestStreak>=7) b.push({icon:'🔥', label:'Week streak', sub:'A full week of consistent sorting.'});
+    if(p.longestStreak>=30) b.push({icon:'🔥', label:'30-day streak', sub:'Top-tier consistency. A month strong.'});
+    if(p.totalPoints>=100) b.push({icon:'⭐', label:'100 pts', sub:'Triple digits on the scoreboard.'});
+    if(p.totalPoints>=500) b.push({icon:'🌟', label:'500 pts', sub:'Halfway to a thousand points.'});
+    if(p.totalPoints>=1000) b.push({icon:'💫', label:'1000 pts', sub:'Four figures of environmental impact.'});
     return b;
   }
 
@@ -1721,9 +1878,39 @@
     return found || (Math.ceil((points+500)/500)*500);
   }
 
+  function edMessage(p){
+    if(p.totalScans === 0) return "Let's sort your first item together — tap Scan to get started!";
+    if(p.currentStreak >= 7) return `${p.currentStreak}-day streak?! You're unstoppable. 🔥`;
+    if(p.currentStreak >= 2) return `${p.currentStreak} days in a row — don't break the chain now!`;
+    const remaining = nextMilestone(p.totalPoints) - p.totalPoints;
+    if(remaining <= 50) return `Only ${remaining} points to your next milestone. So close!`;
+    if(computeBadges(p).length >= 5) return "Look at that badge collection — you're a sorting legend.";
+    if(p.totalPoints >= 500) return "Your impact is really adding up. Keep it going!";
+    return 'Every scan helps — what are we sorting next?';
+  }
+
+  function celebrate(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const colors = ['var(--sun)','var(--terracotta)','var(--forest)','var(--sage-deep)'];
+    const container = document.createElement('div');
+    container.className = 'confetti-burst';
+    for(let i=0;i<24;i++){
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = (42 + Math.random()*16) + '%';
+      piece.style.background = colors[i % colors.length];
+      piece.style.animationDelay = (Math.random()*0.15) + 's';
+      piece.style.setProperty('--dx', Math.round(Math.random()*220-110) + 'px');
+      piece.style.setProperty('--rot', Math.round(Math.random()*720-360) + 'deg');
+      container.appendChild(piece);
+    }
+    document.body.appendChild(container);
+    setTimeout(()=>container.remove(), 1700);
+  }
+
   function challengesHtml(){
     return `
-      <div class="section-label">Challenges</div>
+      ${sectionDivider('Challenges')}
       ${CHALLENGES.map(c=>{
         const val = metricValue(profile, c.metric);
         const pct = Math.min(100, Math.round((val/c.target)*100));
@@ -1736,7 +1923,7 @@
         </div>`;
       }).join('')}
 
-      <div class="section-label">Sponsored challenges</div>
+      ${sectionDivider('Sponsored challenges')}
       ${SPONSOR_CHALLENGES.map(s=>{
         const val = metricValue(profile, s.metric);
         const pct = Math.min(100, Math.round((val/s.target)*100));
@@ -1793,12 +1980,18 @@
     });
   }
 
-  let profileTab = 'overview';
-
-  async function renderProfile(){
+  function renderProfile(){
     const el = document.getElementById('profile-content');
+    const badges = computeBadges();
+    const cats = Object.entries(profile.byCategory).sort((a,b)=>b[1]-a[1]);
+    const maxCat = cats.length ? cats[0][1] : 1;
+    const nextGoal = nextMilestone(profile.totalPoints);
+    const goalPct = Math.min(100, Math.round((profile.totalPoints/nextGoal)*100));
+
     el.innerHTML = `
       <div class="profile-hero">
+        <span class="leaf-decor" style="top:2px; left:10%;">🌿</span>
+        <span class="leaf-decor" style="top:2px; right:10%; transform:scaleX(-1);">🍃</span>
         <div class="profile-avatar-wrap">
           ${profile.avatarUrl
             ? `<img class="profile-avatar" data-src="${postImageUrl(profile.avatarUrl)}" alt="">`
@@ -1816,23 +2009,63 @@
         ` : ''}
       </div>
 
+      <div class="ed-greeting">
+        <svg class="ed-greeting-icon" viewBox="0 0 200 246" aria-hidden="true"><use href="#ed-full"></use></svg>
+        <div class="ed-bubble">${escapeHtml(edMessage(profile))}</div>
+      </div>
+
       <div class="points-hero">
+        <button class="points-hero-medal-btn" id="medals-btn" type="button" title="View medals">🏅</button>
         <div class="points-hero-label">Total points</div>
         <div class="points-hero-num">${profile.totalPoints}</div>
         <div class="points-hero-sub">Lifetime impact across every scan.</div>
       </div>
 
-      <div class="board-toggle">
-        <button class="toggle-btn ${profileTab==='overview'?'active':''}" data-profile-tab="overview" type="button">Overview</button>
-        <button class="toggle-btn ${profileTab==='medals'?'active':''}" data-profile-tab="medals" type="button">Medals</button>
+      <div class="profile-grid">
+        <div class="profile-card"><div class="num">${profile.currentStreak}</div><div class="lbl">Current streak</div></div>
+        <div class="profile-card"><div class="num accent">${profile.totalScans}</div><div class="lbl">Items sorted</div></div>
+        <div class="profile-card"><div class="num accent">${profile.longestStreak}</div><div class="lbl">Longest streak</div></div>
       </div>
-      <div id="profile-tab-content"></div>
-    `;
-    emojify(el);
-    hydrateImages(el);
 
+      ${sectionDivider('Next milestone')}
+      <div class="goal-row">
+        <div class="goal-label">Points to next milestone</div>
+        <div class="goal-value">${profile.totalPoints} / ${nextGoal}</div>
+      </div>
+      <div class="goal-track"><div class="goal-fill" style="width:${goalPct}%"></div></div>
+
+      ${challengesHtml()}
+
+      ${sectionDivider('By material')}
+      ${cats.length ? cats.map(([cat,count])=>{
+        const imp = IMPACT[cat];
+        const pct = Math.round((count/maxCat)*100);
+        return `<div class="cat-bar-row">
+          <div class="cat-name">${imp.icon} ${imp.label}</div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+          <div class="cat-bar-count">${count}</div>
+        </div>`;
+      }).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Nothing sorted yet.</p>`}
+
+      ${sectionDivider('Milestones')}
+      ${badges.length ? badges.map(b=>`
+        <div class="milestone-row">
+          <div class="milestone-badge">${b.icon}</div>
+          <div class="milestone-copy">
+            <div class="milestone-title">${b.label}</div>
+            <div class="milestone-sub">${b.sub}</div>
+          </div>
+        </div>
+      `).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Scan items to unlock milestones.</p>`}
+
+      ${sectionDivider('Nearby recycling bins')}
+      <div class="bins-card" id="bins-card">${binsCardInnerHtml(null)}</div>
+    `;
+    bindFindBinsButton();
     const loginBtn = document.getElementById('profile-login-btn');
     if(loginBtn) loginBtn.addEventListener('click', showAuthView);
+    emojify(el);
+    hydrateImages(el);
 
     if(session.token){
       const fileInput = document.getElementById('avatar-file-input');
@@ -1853,69 +2086,7 @@
       });
     }
 
-    el.querySelectorAll('[data-profile-tab]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        if(profileTab === btn.dataset.profileTab) return;
-        profileTab = btn.dataset.profileTab;
-        renderProfile();
-      });
-    });
-
-    if(profileTab === 'medals') await renderProfileMedals();
-    else renderProfileOverview();
-  }
-
-  function renderProfileOverview(){
-    const badges = computeBadges();
-    const cats = Object.entries(profile.byCategory).sort((a,b)=>b[1]-a[1]);
-    const maxCat = cats.length ? cats[0][1] : 1;
-    const nextGoal = nextMilestone(profile.totalPoints);
-    const goalPct = Math.min(100, Math.round((profile.totalPoints/nextGoal)*100));
-    const body = document.getElementById('profile-tab-content');
-
-    body.innerHTML = `
-      <div class="profile-grid">
-        <div class="profile-card"><div class="num">${profile.totalPoints}</div><div class="lbl">Total points</div></div>
-        <div class="profile-card"><div class="num accent">${profile.totalScans}</div><div class="lbl">Items sorted</div></div>
-        <div class="profile-card"><div class="num accent">${profile.longestStreak}</div><div class="lbl">Longest streak</div></div>
-      </div>
-
-      <div class="section-label">Next milestone</div>
-      <div class="goal-row">
-        <div class="goal-label">Points to next milestone</div>
-        <div class="goal-value">${profile.totalPoints} / ${nextGoal}</div>
-      </div>
-      <div class="goal-track"><div class="goal-fill" style="width:${goalPct}%"></div></div>
-
-      ${challengesHtml()}
-
-      <div class="section-label">By material</div>
-      ${cats.length ? cats.map(([cat,count])=>{
-        const imp = IMPACT[cat];
-        const pct = Math.round((count/maxCat)*100);
-        return `<div class="cat-bar-row">
-          <div class="cat-name">${imp.icon} ${imp.label}</div>
-          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
-          <div class="cat-bar-count">${count}</div>
-        </div>`;
-      }).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Nothing sorted yet.</p>`}
-
-      <div class="section-label">Milestones</div>
-      ${badges.length ? badges.map(b=>`
-        <div class="milestone-row">
-          <div class="milestone-badge">${b.icon}</div>
-          <div class="milestone-copy">
-            <div class="milestone-title">${b.label}</div>
-            <div class="milestone-sub">${b.sub}</div>
-          </div>
-        </div>
-      `).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Scan items to unlock milestones.</p>`}
-
-      <div class="section-label">Nearby recycling bins</div>
-      <div class="bins-card" id="bins-card">${binsCardInnerHtml(null)}</div>
-    `;
-    bindFindBinsButton();
-    emojify(body);
+    document.getElementById('medals-btn').addEventListener('click', openMedalsPanel);
   }
 
   function medalEmoji(rank){ return rank===1 ? '🥇' : rank===2 ? '🥈' : '🥉'; }
@@ -1932,11 +2103,13 @@
       return await res.json();
     }catch(e){ return []; }
   }
-  async function renderProfileMedals(){
-    const body = document.getElementById('profile-tab-content');
+  async function openMedalsPanel(){
+    const panel = document.getElementById('medals-panel');
+    const body = document.getElementById('medals-body');
+    panel.style.display = 'flex';
     body.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
     const medals = await loadMedals();
-    if(!document.getElementById('profile-tab-content')) return;
+    if(panel.style.display === 'none') return;
     if(medals.length === 0){
       body.innerHTML = `<div class="empty-state"><div class="big">🏅</div><p>No medals yet.<br>Finish top 3 in a month to earn one.</p></div>`;
       emojify(body);
