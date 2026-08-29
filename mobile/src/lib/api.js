@@ -111,6 +111,13 @@ export async function getPosts(guestTag) {
   return res.json();
 }
 
+export async function getMyPosts(guestTag) {
+  const qs = !authToken && guestTag ? `?guest_tag=${encodeURIComponent(guestTag)}` : '';
+  const res = await fetch(`${API_BASE}/api/posts/mine${qs}`, { headers: requestHeaders() });
+  if (!res.ok) throw new Error('my posts fetch failed: ' + res.status);
+  return res.json();
+}
+
 export async function createPost({ category, itemName, weightG, co2G, points, funFact, imageUri, mediaType, guestTag }) {
   const form = new FormData();
   form.append('category', category);

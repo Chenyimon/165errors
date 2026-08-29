@@ -431,6 +431,38 @@ def remove_friend(
 
 
 # ---------- Posts ----------
+def _enrich_post(conn, r, viewer: Optional[str]) -> dict:
+    like_count = conn.execute(
+        "SELECT COUNT(*) AS c FROM likes WHERE post_id = ?", (r["id"],)
+    ).fetchone()["c"]
+    comment_count = conn.execute(
+        "SELECT COUNT(*) AS c FROM comments WHERE post_id = ?", (r["id"],)
+    ).fetchone()["c"]
+    liked_by_me = False
+    if viewer:
+        liked_by_me = bool(
+            conn.execute(
+                "SELECT 1 FROM likes WHERE post_id = ? AND username = ?", (r["id"], viewer)
+            ).fetchone()
+        )
+    return {
+        "id": r["id"],
+        "ts": r["ts"],
+        "username": r["username"],
+        "category": r["category"],
+        "itemName": r["item_name"],
+        "weightG": r["weight_g"],
+        "co2G": r["co2_g"],
+        "points": r["points"],
+        "funFact": r["fun_fact"],
+        "imageUrl": f"/uploads/{r['image_path']}" if r["image_path"] else None,
+        "isGuest": bool(r["is_guest"]),
+        "likeCount": like_count,
+        "commentCount": comment_count,
+        "likedByMe": liked_by_me,
+    }
+
+
 @app.get("/api/posts")
 def list_posts(
     limit: int = 50,
@@ -442,39 +474,26 @@ def list_posts(
         rows = conn.execute(
             "SELECT * FROM posts ORDER BY ts DESC LIMIT ?", (min(max(limit, 1), 100),)
         ).fetchall()
-        result = []
-        for r in rows:
-            like_count = conn.execute(
-                "SELECT COUNT(*) AS c FROM likes WHERE post_id = ?", (r["id"],)
-            ).fetchone()["c"]
-            comment_count = conn.execute(
-                "SELECT COUNT(*) AS c FROM comments WHERE post_id = ?", (r["id"],)
-            ).fetchone()["c"]
-            liked_by_me = False
-            if viewer:
-                liked_by_me = bool(
-                    conn.execute(
-                        "SELECT 1 FROM likes WHERE post_id = ? AND username = ?", (r["id"], viewer)
-                    ).fetchone()
-                )
-            result.append(
-                {
-                    "id": r["id"],
-                    "ts": r["ts"],
-                    "username": r["username"],
-                    "category": r["category"],
-                    "itemName": r["item_name"],
-                    "weightG": r["weight_g"],
-                    "co2G": r["co2_g"],
-                    "points": r["points"],
-                    "funFact": r["fun_fact"],
-                    "imageUrl": f"/uploads/{r['image_path']}" if r["image_path"] else None,
-                    "isGuest": bool(r["is_guest"]),
-                    "likeCount": like_count,
-                    "commentCount": comment_count,
-                    "likedByMe": liked_by_me,
-                }
-            )
+        result = [_enrich_post(conn, r, viewer) for r in rows]
+    return result
+
+
+@app.get("/api/posts/mine")
+def list_my_posts(
+    guest_tag: Optional[str] = None,
+    username: Optional[str] = Depends(get_optional_username),
+):
+    """All of the calling identity's own posts, for the calendar view — not just the
+    most recent global posts, so a whole month's history is available regardless of
+    how active the public feed is."""
+    identity = username or guest_display_name(guest_tag)
+    if not identity:
+        return []
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM posts WHERE username = ? ORDER BY ts DESC LIMIT 500", (identity,)
+        ).fetchall()
+        result = [_enrich_post(conn, r, identity) for r in rows]
     return result
 
 

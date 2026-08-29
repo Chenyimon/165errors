@@ -17,6 +17,7 @@ import Emoji from './src/components/Emoji';
 import FeedScreen from './src/screens/FeedScreen';
 import BoardScreen from './src/screens/BoardScreen';
 import ScanScreen from './src/screens/ScanScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -68,6 +69,11 @@ function Root() {
             tabBarLabel: 'Post',
             tabBarIcon: ({ focused }) => <PlusTabIcon focused={focused} />,
           }}
+        />
+        <Tab.Screen
+          name="Calendar"
+          component={CalendarScreen}
+          options={{ tabBarIcon: () => <TabIcon emoji="📅" /> }}
         />
         <Tab.Screen
           name="Profile"
