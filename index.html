@@ -5,25 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>SORT/ED</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#14181A;
-    --paper:#1E2420;
-    --paper-raised:#242B25;
-    --chalk:#EDEAE4;
-    --chalk-dim:#9FA69C;
-    --signal:#FF6B35;
-    --moss:#6B9B5E;
-    --line:#333B34;
-    --danger:#D9634A;
-    --radius:14px;
+    --page:#EDEAE0;
+    --surface:#FDFCF7;
+    --surface-alt:#F5F2E9;
+    --forest:#2C4736;
+    --forest-deep:#20362A;
+    --sage:#C6D3BA;
+    --sage-deep:#5C7359;
+    --track:#E4E1D2;
+    --sun:#E7A94C;
+    --sun-deep:#C98A32;
+    --terracotta:#BE5B33;
+    --water:#5B7C87;
+    --water-bg:#D8E4E7;
+    --ink:#20281F;
+    --ink-dim:#75806E;
+    --border:#E4E0D0;
+    --radius:18px;
+    --radius-sm:12px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
   body{
-    background:#0A0C0A;
-    color:var(--chalk);
+    background:var(--page);
+    color:var(--ink);
     font-family:'Inter',sans-serif;
     min-height:100vh;
     display:flex;
@@ -33,7 +41,7 @@
     width:100%;
     max-width:430px;
     min-height:100vh;
-    background:var(--ink);
+    background:var(--surface);
     display:flex;
     flex-direction:column;
     position:relative;
@@ -46,26 +54,26 @@
     align-items:center;
     justify-content:space-between;
     padding:18px 18px 14px;
-    border-bottom:1px solid var(--line);
+    border-bottom:1px solid var(--border);
     position:sticky; top:0; z-index:20;
-    background:var(--ink);
+    background:var(--surface);
   }
   .wordmark{
-    font-family:'Archivo Black',sans-serif;
-    font-size:20px;
-    letter-spacing:0.5px;
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:21px;
+    letter-spacing:0.2px;
+    color:var(--forest);
   }
-  .wordmark span{color:var(--signal);}
-  .header-stats{display:flex; gap:14px; align-items:center;}
+  .wordmark span{color:var(--terracotta);}
+  .header-stats{display:flex; gap:10px; align-items:center;}
   .stat-pill{
     display:flex; align-items:center; gap:5px;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:13px; font-weight:600;
-    color:var(--chalk);
-    background:var(--paper);
-    border:1px solid var(--line);
+    font-size:13px; font-weight:700;
+    color:var(--forest);
+    background:var(--sage);
     border-radius:20px;
-    padding:5px 10px;
+    padding:6px 11px;
   }
   .stat-pill .icon{font-size:13px;}
 
@@ -76,11 +84,12 @@
   @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 
   h1.view-title{
-    font-family:'Archivo Black',sans-serif;
-    font-size:15px;
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    font-weight:700;
     text-transform:uppercase;
     letter-spacing:1.5px;
-    color:var(--chalk-dim);
+    color:var(--ink-dim);
     margin:0 0 18px;
   }
 
@@ -93,21 +102,22 @@
   .scan-btn{
     width:180px; height:180px;
     border-radius:50%;
-    border:2px dashed var(--signal);
-    background:radial-gradient(circle at 30% 30%, rgba(255,107,53,0.12), transparent 70%);
+    border:none;
+    background:var(--forest);
+    box-shadow:0 0 0 10px var(--sage);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:10px;
     cursor:pointer;
     transition:transform .15s ease, background .15s ease;
   }
-  .scan-btn:active{transform:scale(0.96); background:rgba(255,107,53,0.18);}
-  .scan-btn svg{width:46px; height:46px;}
+  .scan-btn:active{transform:scale(0.96); background:var(--forest-deep);}
+  .scan-btn svg{width:44px; height:44px;}
   .scan-btn .label{
-    font-family:'Archivo Black',sans-serif;
-    font-size:13px; letter-spacing:1px; text-transform:uppercase;
-    color:var(--signal);
+    font-family:'Inter',sans-serif;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase; font-weight:700;
+    color:#fff;
   }
-  .scan-sub{color:var(--chalk-dim); font-size:13px; margin-top:18px; max-width:260px; line-height:1.5;}
+  .scan-sub{color:var(--ink-dim); font-size:13px; margin-top:22px; max-width:260px; line-height:1.5;}
 
   .analyzing{
     display:flex; flex-direction:column; align-items:center; gap:18px;
@@ -115,49 +125,48 @@
   }
   .analyzing img{
     width:140px; height:140px; object-fit:cover; border-radius:var(--radius);
-    border:1px solid var(--line); filter:saturate(0.6);
+    border:1px solid var(--border); filter:saturate(0.75);
   }
   .spinner{
     width:26px; height:26px;
-    border:3px solid var(--line);
-    border-top-color:var(--signal);
+    border:3px solid var(--track);
+    border-top-color:var(--forest);
     border-radius:50%;
     animation:spin .8s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg);}}
-  .analyzing .msg{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--chalk-dim); letter-spacing:0.5px;}
+  .analyzing .msg{font-family:'Inter',sans-serif; font-size:12px; font-weight:600; color:var(--ink-dim); letter-spacing:0.5px;}
 
   /* ---------- Ticket / reveal card ---------- */
   .ticket{
-    background:var(--paper);
-    border:1px solid var(--line);
+    background:var(--surface);
+    border:1px solid var(--border);
     border-radius:var(--radius);
     overflow:hidden;
     position:relative;
   }
   .ticket-notch{
     position:absolute; top:32px; left:-10px; width:20px; height:20px;
-    background:var(--ink); border-radius:50%;
+    background:var(--page); border-radius:50%;
   }
   .ticket-notch.right{left:auto; right:-10px;}
   .ticket-head{
     padding:22px 22px 16px;
     text-align:center;
-    border-bottom:1px dashed var(--line);
+    border-bottom:1px dashed var(--border);
   }
   .ticket-cat{
     display:inline-block;
-    font-family:'IBM Plex Mono',monospace;
-    font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
-    color:var(--signal);
-    border:1px solid var(--signal);
+    font-size:11px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase;
     border-radius:20px;
-    padding:3px 10px;
+    padding:4px 12px;
     margin-bottom:10px;
   }
   .ticket-item{
-    font-family:'Archivo Black',sans-serif;
-    font-size:19px; line-height:1.3;
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:20px; line-height:1.3;
+    color:var(--ink);
   }
   .ticket-stats{
     display:flex;
@@ -166,68 +175,72 @@
   }
   .ticket-stat{flex:1; text-align:center;}
   .ticket-stat .num{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:20px; font-weight:600; color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    font-size:19px; font-weight:800; color:var(--ink);
   }
   .ticket-stat .lbl{
-    font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--chalk-dim); margin-top:2px;
+    font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink-dim); margin-top:2px;
   }
   .ticket-points{
     text-align:center;
     padding:6px 22px 18px;
-    font-family:'Archivo Black',sans-serif;
-    font-size:30px;
-    color:var(--moss);
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:32px;
+    color:var(--terracotta);
   }
-  .ticket-points .plus{font-size:16px; vertical-align:top;}
+  .ticket-points .plus{font-size:16px; vertical-align:top; font-family:'Inter',sans-serif;}
   .ticket-fact{
-    background:var(--paper-raised);
+    background:var(--surface-alt);
     padding:14px 22px;
     font-size:12.5px;
-    color:var(--chalk-dim);
+    color:var(--ink-dim);
     line-height:1.5;
-    border-top:1px dashed var(--line);
+    border-top:1px dashed var(--border);
   }
-  .ticket-fact b{color:var(--chalk);}
+  .ticket-fact b{color:var(--ink);}
   .reveal-actions{display:flex; gap:10px; margin-top:18px;}
 
   /* ---------- Buttons ---------- */
   .btn{
     flex:1;
     padding:13px;
-    border-radius:10px;
-    border:1px solid var(--line);
-    background:var(--paper);
-    color:var(--chalk);
+    border-radius:14px;
+    border:1.5px solid var(--border);
+    background:var(--surface);
+    color:var(--ink);
     font-family:'Inter',sans-serif;
-    font-weight:600;
+    font-weight:700;
     font-size:14px;
     cursor:pointer;
     text-align:center;
   }
-  .btn.primary{background:var(--signal); border-color:var(--signal); color:#14181A;}
+  .btn.primary{background:var(--forest); border-color:var(--forest); color:#fff;}
   .btn:active{opacity:0.8;}
 
   /* ---------- Feed ---------- */
   .feed-row{
     display:flex; align-items:center; gap:12px;
-    padding:13px 0;
-    border-bottom:1px solid var(--line);
+    padding:14px;
+    margin-bottom:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius-sm);
   }
   .feed-icon{
-    width:38px; height:38px; border-radius:10px;
-    background:var(--paper-raised);
+    width:38px; height:38px; border-radius:50%;
+    background:var(--sage);
     display:flex; align-items:center; justify-content:center;
     font-size:17px; flex-shrink:0;
   }
   .feed-mid{flex:1; min-width:0;}
-  .feed-item{font-size:14px; font-weight:600;}
-  .feed-time{font-size:11.5px; color:var(--chalk-dim); margin-top:1px;}
+  .feed-item{font-size:14px; font-weight:700; color:var(--ink);}
+  .feed-time{font-size:11.5px; color:var(--ink-dim); margin-top:1px;}
   .feed-pts{
-    font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--moss); font-size:14px; flex-shrink:0;
+    font-weight:800; color:var(--terracotta); font-size:14px; flex-shrink:0;
   }
   .empty-state{
-    text-align:center; padding:60px 20px; color:var(--chalk-dim);
+    text-align:center; padding:60px 20px; color:var(--ink-dim);
   }
   .empty-state .big{font-size:34px; margin-bottom:10px;}
   .empty-state p{font-size:13px; line-height:1.6;}
@@ -236,84 +249,136 @@
   .lb-row{
     display:flex; align-items:center; gap:12px;
     padding:12px 14px;
-    border-radius:10px;
+    border-radius:var(--radius-sm);
     margin-bottom:8px;
-    background:var(--paper);
-    border:1px solid var(--line);
+    background:var(--surface);
+    border:1px solid var(--border);
   }
-  .lb-row.me{border-color:var(--signal); background:rgba(255,107,53,0.08);}
+  .lb-row.me{border-color:var(--forest); background:var(--sage);}
   .lb-rank{
-    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px;
-    color:var(--chalk-dim); width:22px;
+    font-weight:800; font-size:13px;
+    color:var(--ink-dim); width:22px;
   }
-  .lb-name{flex:1; font-size:14px; font-weight:600;}
-  .lb-pts{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--moss); font-size:14px;}
+  .lb-name{flex:1; font-size:14px; font-weight:700; color:var(--ink);}
+  .lb-pts{font-weight:800; color:var(--terracotta); font-size:14px;}
 
   .name-setup{
-    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
     padding:20px; text-align:center;
   }
-  .name-setup p{font-size:13px; color:var(--chalk-dim); margin-bottom:14px; line-height:1.5;}
+  .name-setup p{font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;}
   .name-setup input{
-    width:100%; padding:12px; border-radius:10px; border:1px solid var(--line);
-    background:var(--paper-raised); color:var(--chalk); font-size:14px; margin-bottom:12px;
+    width:100%; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+    background:var(--surface-alt); color:var(--ink); font-size:14px; margin-bottom:12px;
     font-family:'Inter',sans-serif;
   }
-  .name-setup input:focus{outline:1px solid var(--signal);}
+  .name-setup input:focus{outline:none; border-color:var(--forest);}
 
   /* ---------- Profile ---------- */
-  .profile-hero{text-align:center; padding:10px 0 26px;}
-  .profile-name{font-family:'Archivo Black',sans-serif; font-size:22px;}
+  .profile-hero{text-align:center; padding:10px 0 22px;}
+  .profile-name{font-family:'Fraunces',serif; font-weight:700; font-size:22px; color:var(--ink);}
+
+  /* Weekly-streak style card */
+  .streak-card{
+    background:var(--forest); border-radius:var(--radius);
+    padding:22px; color:#fff; margin-bottom:22px;
+  }
+  .streak-top{display:flex; gap:14px; align-items:center; margin-bottom:20px;}
+  .streak-ring{
+    width:60px; height:60px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .streak-ring-inner{
+    width:44px; height:44px; border-radius:50%;
+    background:var(--forest-deep);
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px;
+  }
+  .streak-title{font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin-bottom:4px;}
+  .streak-sub{font-size:12.5px; color:rgba(255,255,255,0.72); line-height:1.5;}
+  .streak-bottom .big{font-family:'Inter',sans-serif; font-weight:800; font-size:32px;}
+  .streak-bottom .cap{display:block; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.6); margin-top:2px;}
+
   .profile-grid{
     display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px;
   }
   .profile-card{
-    background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
     padding:16px; text-align:center;
   }
-  .profile-card .num{font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600;}
-  .profile-card .lbl{font-size:11px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;}
+  .profile-card .num{font-family:'Inter',sans-serif; font-size:24px; font-weight:800; color:var(--ink);}
+  .profile-card .num.accent{color:var(--terracotta);}
+  .profile-card .lbl{font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;}
 
   .section-label{
-    font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--chalk-dim);
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--ink-dim);
     margin:22px 0 10px;
   }
-  .cat-bar-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:12.5px;}
-  .cat-bar-row .cat-name{width:64px; flex-shrink:0; color:var(--chalk-dim);}
-  .cat-bar-track{flex:1; height:8px; background:var(--paper-raised); border-radius:5px; overflow:hidden;}
-  .cat-bar-fill{height:100%; background:var(--moss); border-radius:5px;}
-  .cat-bar-count{font-family:'IBM Plex Mono',monospace; width:20px; text-align:right; color:var(--chalk-dim);}
 
-  .badge-grid{display:flex; flex-wrap:wrap; gap:8px;}
-  .badge{
-    background:var(--paper); border:1px solid var(--line); border-radius:20px;
-    padding:7px 12px; font-size:12px; display:flex; align-items:center; gap:6px;
+  /* Monthly-goal style progress bar */
+  .goal-row{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; margin-bottom:8px;}
+  .goal-label{color:var(--ink);font-weight:600;}
+  .goal-value{font-weight:800; color:var(--ink);}
+  .goal-track{height:10px; background:var(--track); border-radius:6px; overflow:hidden;}
+  .goal-fill{height:100%; background:var(--forest); border-radius:6px;}
+
+  .cat-bar-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:12.5px;}
+  .cat-bar-row .cat-name{width:80px; flex-shrink:0; color:var(--ink-dim);}
+  .cat-bar-track{flex:1; height:8px; background:var(--track); border-radius:5px; overflow:hidden;}
+  .cat-bar-fill{height:100%; background:var(--forest); border-radius:5px;}
+  .cat-bar-count{width:20px; text-align:right; color:var(--ink-dim); font-weight:700;}
+
+  /* Milestone-unlocked style rows */
+  .milestone-row{display:flex; align-items:center; gap:14px; padding:10px 0;}
+  .milestone-badge{
+    width:44px; height:44px; border-radius:50%;
+    background:var(--terracotta); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px; flex-shrink:0;
   }
+  .milestone-title{font-weight:700; font-size:14px; color:var(--ink);}
+  .milestone-sub{font-size:12px; color:var(--ink-dim); margin-top:1px;}
+
+  /* Category tag pills */
+  .tag{display:inline-block; font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; border-radius:20px; padding:4px 12px;}
+  .tag-sun{background:#F5DEB4; color:#8A5A22;}
+  .tag-water{background:var(--water-bg); color:var(--water);}
+  .tag-terracotta{background:#F0D6C7; color:var(--terracotta);}
+  .tag-sage{background:var(--sage); color:var(--sage-deep);}
+  .tag-compost{background:#E9DEC5; color:#6B5230;}
+  .tag-neutral{background:var(--track); color:var(--ink-dim);}
+  .icon-sun{background:#F5DEB4;}
+  .icon-water{background:var(--water-bg);}
+  .icon-terracotta{background:#F0D6C7;}
+  .icon-sage{background:var(--sage);}
+  .icon-compost{background:#E9DEC5;}
+  .icon-neutral{background:var(--track);}
 
   /* ---------- Tab bar ---------- */
   #tabbar{
     position:fixed; bottom:0; left:50%; transform:translateX(-50%);
     width:100%; max-width:430px;
     display:flex;
-    background:var(--paper);
-    border-top:1px solid var(--line);
+    background:var(--surface);
+    border-top:1px solid var(--border);
     padding:10px 10px calc(10px + env(safe-area-inset-bottom));
     z-index:30;
   }
   .tab-btn{
     flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
-    background:none; border:none; color:var(--chalk-dim); cursor:pointer;
-    padding:6px 0; font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600;
+    background:none; border:none; color:var(--ink-dim); cursor:pointer;
+    padding:6px 0; font-family:'Inter',sans-serif; font-size:10.5px; font-weight:700;
     letter-spacing:0.3px; text-transform:uppercase;
   }
   .tab-btn svg{width:20px; height:20px;}
-  .tab-btn.active{color:var(--signal);}
+  .tab-btn.active{color:var(--forest);}
 
   /* ---------- Toast ---------- */
   #toast{
     position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
-    background:var(--chalk); color:var(--ink); padding:10px 18px; border-radius:30px;
-    font-size:13px; font-weight:600; opacity:0; pointer-events:none;
+    background:var(--forest); color:#fff; padding:10px 18px; border-radius:30px;
+    font-size:13px; font-weight:700; opacity:0; pointer-events:none;
     transition:all .25s ease; z-index:50; white-space:nowrap;
   }
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
@@ -326,7 +391,7 @@
     <div class="wordmark">SORT<span>/</span>ED</div>
     <div class="header-stats">
       <div class="stat-pill"><span class="icon">🔥</span><span id="hdr-streak">0</span></div>
-      <div class="stat-pill"><span class="icon">⬢</span><span id="hdr-points">0</span></div>
+      <div class="stat-pill"><span class="icon">🌿</span><span id="hdr-points">0</span></div>
     </div>
   </header>
 
@@ -337,7 +402,7 @@
       <h1 class="view-title">Scan an item</h1>
       <div id="scan-idle" class="scan-hero">
         <button class="scan-btn" id="scan-trigger">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B35" stroke-width="1.6"><path d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .9-.55l.6-1.2A1 1 0 0 1 9.6 3.6h4.8a1 1 0 0 1 .9.55l.6 1.2a1 1 0 0 0 .9.55H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.6"><path d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .9-.55l.6-1.2A1 1 0 0 1 9.6 3.6h4.8a1 1 0 0 1 .9.55l.6 1.2a1 1 0 0 0 .9.55H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
           <span class="label">Scan</span>
         </button>
         <p class="scan-sub">Photograph what you're recycling. AI identifies the material and estimates your impact.</p>
@@ -405,12 +470,12 @@
   const APP_SECRET = "REPLACE_WITH_YOUR_OWN_SECRET"; // must match APP_SECRET set on the Worker
 
   const IMPACT = {
-    plastic:{co2:1.5, label:'Plastic', icon:'♳'},
-    glass:{co2:0.3, label:'Glass', icon:'🍾'},
-    metal:{co2:4.0, label:'Metal', icon:'🥫'},
-    paper:{co2:0.9, label:'Paper', icon:'📄'},
-    compost:{co2:0.4, label:'Compost', icon:'🍂'},
-    other:{co2:0.5, label:'Other', icon:'♻️'}
+    plastic:{co2:1.5, label:'Plastic', icon:'♳', tag:'sun'},
+    glass:{co2:0.3, label:'Glass', icon:'🍾', tag:'water'},
+    metal:{co2:4.0, label:'Metal', icon:'🥫', tag:'terracotta'},
+    paper:{co2:0.9, label:'Paper', icon:'📄', tag:'sage'},
+    compost:{co2:0.4, label:'Compost', icon:'🍂', tag:'compost'},
+    other:{co2:0.5, label:'Other', icon:'♻️', tag:'neutral'}
   };
   const SIZE_G = {small:15, medium:80, large:300};
 
@@ -618,7 +683,7 @@
         <div class="ticket-notch"></div>
         <div class="ticket-notch right"></div>
         <div class="ticket-head">
-          <div class="ticket-cat">${imp.icon} ${imp.label}</div>
+          <div class="ticket-cat tag-${imp.tag}">${imp.icon} ${imp.label}</div>
           <div class="ticket-item">${escapeHtml(scan.itemName)}</div>
         </div>
         <div class="ticket-stats">
@@ -656,7 +721,7 @@
     el.innerHTML = scans.map(s=>{
       const imp = IMPACT[s.category];
       return `<div class="feed-row">
-        <div class="feed-icon">${imp.icon}</div>
+        <div class="feed-icon icon-${imp.tag}">${imp.icon}</div>
         <div class="feed-mid">
           <div class="feed-item">${escapeHtml(s.itemName)}</div>
           <div class="feed-time">${timeAgo(s.ts)} · ${imp.label}</div>
@@ -704,16 +769,22 @@
   // ---------- Profile ----------
   function computeBadges(){
     const b = [];
-    if(profile.totalScans>=1) b.push({icon:'🏷️', label:'First sort'});
-    if(profile.totalScans>=10) b.push({icon:'📦', label:'10 scans'});
-    if(profile.totalScans>=50) b.push({icon:'🏭', label:'50 scans'});
-    if(profile.longestStreak>=3) b.push({icon:'🔥', label:'3-day streak'});
-    if(profile.longestStreak>=7) b.push({icon:'🔥', label:'Week streak'});
-    if(profile.longestStreak>=30) b.push({icon:'🔥', label:'30-day streak'});
-    if(profile.totalPoints>=100) b.push({icon:'⭐', label:'100 pts'});
-    if(profile.totalPoints>=500) b.push({icon:'🌟', label:'500 pts'});
-    if(profile.totalPoints>=1000) b.push({icon:'💫', label:'1000 pts'});
+    if(profile.totalScans>=1) b.push({icon:'🏷️', label:'First sort', sub:"You've logged your very first item."});
+    if(profile.totalScans>=10) b.push({icon:'📦', label:'10 scans', sub:'Ten items diverted from landfill.'});
+    if(profile.totalScans>=50) b.push({icon:'🏭', label:'50 scans', sub:'Fifty items and counting — serious impact.'});
+    if(profile.longestStreak>=3) b.push({icon:'🔥', label:'3-day streak', sub:'Three days in a row. Keep the chain going.'});
+    if(profile.longestStreak>=7) b.push({icon:'🔥', label:'Week streak', sub:'A full week of consistent sorting.'});
+    if(profile.longestStreak>=30) b.push({icon:'🔥', label:'30-day streak', sub:'Top-tier consistency. A month strong.'});
+    if(profile.totalPoints>=100) b.push({icon:'⭐', label:'100 pts', sub:'Triple digits on the scoreboard.'});
+    if(profile.totalPoints>=500) b.push({icon:'🌟', label:'500 pts', sub:'Halfway to a thousand points.'});
+    if(profile.totalPoints>=1000) b.push({icon:'💫', label:'1000 pts', sub:'Four figures of environmental impact.'});
     return b;
+  }
+
+  function nextMilestone(points){
+    const steps = [100,500,1000,2000,5000,10000];
+    const found = steps.find(m=>m>points);
+    return found || (Math.ceil((points+500)/500)*500);
   }
 
   function renderProfile(){
@@ -721,17 +792,44 @@
     const badges = computeBadges();
     const cats = Object.entries(profile.byCategory).sort((a,b)=>b[1]-a[1]);
     const maxCat = cats.length ? cats[0][1] : 1;
+    const ringPct = Math.round((Math.min(profile.currentStreak,7)/7)*100);
+    const nextGoal = nextMilestone(profile.totalPoints);
+    const goalPct = Math.min(100, Math.round((profile.totalPoints/nextGoal)*100));
 
     el.innerHTML = `
       <div class="profile-hero">
         <div class="profile-name">${profile.username ? escapeHtml(profile.username) : 'Set a name in Board'}</div>
       </div>
+
+      <div class="streak-card">
+        <div class="streak-top">
+          <div class="streak-ring" style="background:conic-gradient(var(--sun) 0% ${ringPct}%, rgba(255,255,255,0.2) ${ringPct}% 100%)">
+            <div class="streak-ring-inner">🔥</div>
+          </div>
+          <div class="streak-copy">
+            <div class="streak-title">${profile.currentStreak>0 ? 'Growing steady' : 'Ready to start'}</div>
+            <div class="streak-sub">${profile.currentStreak>0 ? `You're on a ${profile.currentStreak}-day streak. Longest run so far: ${profile.longestStreak} days.` : 'Scan an item today to start your streak.'}</div>
+          </div>
+        </div>
+        <div class="streak-bottom">
+          <span class="big">${profile.currentStreak}</span>
+          <span class="cap">Day streak</span>
+        </div>
+      </div>
+
       <div class="profile-grid">
         <div class="profile-card"><div class="num">${profile.totalPoints}</div><div class="lbl">Total points</div></div>
-        <div class="profile-card"><div class="num">${profile.totalScans}</div><div class="lbl">Items sorted</div></div>
+        <div class="profile-card"><div class="num accent">${profile.totalScans}</div><div class="lbl">Items sorted</div></div>
         <div class="profile-card"><div class="num">${profile.currentStreak}</div><div class="lbl">Current streak</div></div>
-        <div class="profile-card"><div class="num">${profile.longestStreak}</div><div class="lbl">Longest streak</div></div>
+        <div class="profile-card"><div class="num accent">${profile.longestStreak}</div><div class="lbl">Longest streak</div></div>
       </div>
+
+      <div class="section-label">Next milestone</div>
+      <div class="goal-row">
+        <div class="goal-label">Points to next milestone</div>
+        <div class="goal-value">${profile.totalPoints} / ${nextGoal}</div>
+      </div>
+      <div class="goal-track"><div class="goal-fill" style="width:${goalPct}%"></div></div>
 
       <div class="section-label">By material</div>
       ${cats.length ? cats.map(([cat,count])=>{
@@ -742,12 +840,18 @@
           <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
           <div class="cat-bar-count">${count}</div>
         </div>`;
-      }).join('') : `<p style="color:var(--chalk-dim); font-size:13px;">Nothing sorted yet.</p>`}
+      }).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Nothing sorted yet.</p>`}
 
-      <div class="section-label">Badges</div>
-      <div class="badge-grid">
-        ${badges.length ? badges.map(b=>`<div class="badge">${b.icon} ${b.label}</div>`).join('') : `<p style="color:var(--chalk-dim); font-size:13px;">Scan items to earn badges.</p>`}
-      </div>
+      <div class="section-label">Milestones</div>
+      ${badges.length ? badges.map(b=>`
+        <div class="milestone-row">
+          <div class="milestone-badge">${b.icon}</div>
+          <div class="milestone-copy">
+            <div class="milestone-title">${b.label}</div>
+            <div class="milestone-sub">${b.sub}</div>
+          </div>
+        </div>
+      `).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Scan items to unlock milestones.</p>`}
     `;
   }
 
