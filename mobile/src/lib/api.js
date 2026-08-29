@@ -104,8 +104,9 @@ export async function removeFriend(username) {
   });
 }
 
-export async function getPosts() {
-  const res = await fetch(`${API_BASE}/api/posts`, { headers: baseHeaders() });
+export async function getPosts(guestTag) {
+  const qs = !authToken && guestTag ? `?guest_tag=${encodeURIComponent(guestTag)}` : '';
+  const res = await fetch(`${API_BASE}/api/posts${qs}`, { headers: requestHeaders() });
   if (!res.ok) throw new Error('feed fetch failed: ' + res.status);
   return res.json();
 }
@@ -132,6 +133,35 @@ export async function createPost({ category, itemName, weightG, co2G, points, fu
   });
   if (!res.ok) throw new Error('post failed: ' + res.status);
   return res.json();
+}
+
+export async function toggleLike(postId, guestTag) {
+  const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}/like`, {
+    method: 'POST',
+    headers: requestHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ guest_tag: authToken ? null : guestTag }),
+  });
+  if (!res.ok) throw new Error('like failed: ' + res.status);
+  return res.json();
+}
+
+export async function getComments(postId) {
+  const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}/comments`, {
+    headers: baseHeaders(),
+  });
+  if (!res.ok) throw new Error('comments fetch failed: ' + res.status);
+  return res.json();
+}
+
+export async function addComment(postId, text, guestTag) {
+  const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}/comments`, {
+    method: 'POST',
+    headers: requestHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ text, guest_tag: authToken ? null : guestTag }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || 'Could not post comment');
+  return data;
 }
 
 export function imageUrl(path) {

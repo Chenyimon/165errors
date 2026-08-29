@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../theme';
 import { useFriendsModal } from '../lib/FriendsModalContext';
+import Emoji from './Emoji';
 
 export default function AppHeader() {
   const insets = useSafeAreaInsets();
@@ -15,7 +16,7 @@ export default function AppHeader() {
         SORT<Text style={styles.slash}>/</Text>ED
       </Text>
       <Pressable style={styles.friendsBtn} onPress={open} accessibilityLabel="Friends">
-        <Text style={styles.friendsIcon}>👥</Text>
+        <Emoji symbol="👥" size={16} />
       </Pressable>
     </View>
   );
@@ -42,5 +43,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  friendsIcon: { fontSize: 16 },
 });

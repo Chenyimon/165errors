@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { useNavigation } from '@react-navigation/native';
 
 import { colors, radius } from '../theme';
 import { computeImpact, IMPACT } from '../lib/impact';
 import { PREP_TIPS } from '../lib/content';
+import { prepareImageForUpload } from '../lib/imagePrep';
 import { classifyImage, createPost } from '../lib/api';
 import { useProfile } from '../lib/ProfileContext';
 import { updateStreak, applyStreakBonus } from '../lib/profileStore';
@@ -16,16 +16,51 @@ import Button from '../components/Button';
 import Tag from '../components/Tag';
 import RecycleBadge from '../components/RecycleBadge';
 
-const ANALYZING_MESSAGES = ['READING MATERIAL...', 'ESTIMATING WEIGHT...', 'CALCULATING IMPACT...'];
+const ANALYZING_MESSAGES = [
+  'Hold up… saving the Earth. 🌎',
+  'Trash? We prefer "future resources."',
+  'Giving your waste a second chance…',
+  'Plot twist: your trash has value.',
+  'Your recycling streak is looking 🔥',
+  'Turning trash into treasure…',
+  'BRB, reducing your carbon footprint.',
+  'The planet called. It said thanks.',
+  'Certified eco moment. 🌱',
+  'Making waste work for you.',
+  'One less thing in the landfill…',
+  'Your trash just got an upgrade.',
+  'Loading… because even recycling needs a break.',
+  'Eco mode: ON.',
+  'Touch grass. Recycle first. 🌱',
+];
+
+const POSTING_MESSAGES = [
+  'Calculating your impact…',
+  'Counting your eco points…',
+  'Measuring your impact…',
+  'Adding another win for the planet…',
+  'Your next achievement is loading…',
+  'Updating the leaderboard…',
+  'Turning your recycling into points…',
+  'Another recycle, another step forward.',
+  'Your streak is growing…',
+  'Impact unlocked. ♻️',
+  'Points incoming…',
+  'Preparing your next challenge…',
+  "Scanning the good you've done…",
+  'Calculating how much waste you saved…',
+];
 
 export default function ScanScreen() {
   const navigation = useNavigation();
   const { profile, saveProfile, guestTag } = useProfile();
-  const [stage, setStage] = useState('idle'); // idle | analyzing | review
+  const [stage, setStage] = useState('idle'); // idle | analyzing | review | unclear
   const [analyzingMsg, setAnalyzingMsg] = useState(ANALYZING_MESSAGES[0]);
+  const [postingMsg, setPostingMsg] = useState(POSTING_MESSAGES[0]);
   const [pending, setPending] = useState(null);
   const [posting, setPosting] = useState(false);
   const [checkedTips, setCheckedTips] = useState([]);
+  const [unclearUri, setUnclearUri] = useState(null);
 
   async function startScan() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -48,13 +83,17 @@ export default function ScanScreen() {
     }, 1100);
 
     try {
-      const manipulated = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width: 720 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true }
-      );
+      const { uri: resizedUri, base64, mediaType } = await prepareImageForUpload(uri);
 
-      const result = await classifyImage(manipulated.base64, 'image/jpeg');
+      const result = await classifyImage(base64, mediaType);
+
+      if (result.needs_confirmation) {
+        clearInterval(msgTimer);
+        setUnclearUri(resizedUri);
+        setStage('unclear');
+        return;
+      }
+
       const { weightG, co2G, points, imp, category } = computeImpact(result.category, result.size_bucket);
 
       setPending({
@@ -64,7 +103,7 @@ export default function ScanScreen() {
         co2G,
         points,
         funFact: result.fun_fact || '',
-        imageUri: manipulated.uri,
+        imageUri: resizedUri,
       });
       setCheckedTips((PREP_TIPS[category] || []).map(() => false));
       clearInterval(msgTimer);
@@ -80,6 +119,7 @@ export default function ScanScreen() {
   function retake() {
     setPending(null);
     setCheckedTips([]);
+    setUnclearUri(null);
     setStage('idle');
   }
 
@@ -90,6 +130,12 @@ export default function ScanScreen() {
   async function finalizePost() {
     if (!pending) return;
     setPosting(true);
+    let msgIdx = 0;
+    setPostingMsg(POSTING_MESSAGES[0]);
+    const msgTimer = setInterval(() => {
+      msgIdx = (msgIdx + 1) % POSTING_MESSAGES.length;
+      setPostingMsg(POSTING_MESSAGES[msgIdx]);
+    }, 1100);
     try {
       const streaked = updateStreak(profile);
       const finalPoints = applyStreakBonus(streaked, pending.points);
@@ -116,6 +162,7 @@ export default function ScanScreen() {
         guestTag,
       });
 
+      clearInterval(msgTimer);
       setPending(null);
       setCheckedTips([]);
       setStage('idle');
@@ -123,6 +170,7 @@ export default function ScanScreen() {
       navigation.navigate('Feed');
     } catch (err) {
       console.error(err);
+      clearInterval(msgTimer);
       showToast("Couldn't post — try again");
     }
     setPosting(false);
@@ -153,6 +201,24 @@ export default function ScanScreen() {
           </View>
         )}
 
+        {stage === 'unclear' && unclearUri && (
+          <View>
+            <View style={styles.previewCard}>
+              <Image source={{ uri: unclearUri }} style={styles.previewImage} />
+              <View style={[styles.previewBody, { alignItems: 'center' }]}>
+                <Text style={styles.prepLabel}>Hmm, hard to tell</Text>
+                <Text style={[styles.itemName, { textAlign: 'center' }]}>
+                  That photo's a little too dark or blurry to identify clearly.
+                </Text>
+                <Text style={styles.factText}>
+                  Try again with better lighting and the item centered in frame.
+                </Text>
+              </View>
+            </View>
+            <Button title="Retake photo" variant="primary" onPress={retake} style={{ width: '100%', marginTop: 18 }} />
+          </View>
+        )}
+
         {stage === 'review' && pending && (
           <View>
             <View style={styles.previewCard}>
@@ -161,7 +227,8 @@ export default function ScanScreen() {
                 <View style={styles.tagRow}>
                   <Tag
                     tag={IMPACT[pending.category].tag}
-                    label={`${IMPACT[pending.category].icon} ${IMPACT[pending.category].label}`}
+                    icon={IMPACT[pending.category].icon}
+                    label={IMPACT[pending.category].label}
                   />
                   <RecycleBadge
                     recyclable={IMPACT[pending.category].recyclable}
@@ -210,16 +277,23 @@ export default function ScanScreen() {
               </View>
             </View>
 
-            <View style={styles.actions}>
-              <Button title="Retake" onPress={retake} style={{ flex: 1 }} />
-              <Button
-                title="Post to feed"
-                variant="primary"
-                onPress={finalizePost}
-                style={{ flex: 1 }}
-                disabled={posting || checkedTips.some((c) => !c)}
-              />
-            </View>
+            {posting ? (
+              <View style={styles.postingStatus}>
+                <ActivityIndicator size="small" color={colors.forest} />
+                <Text style={styles.postingMsg}>{postingMsg}</Text>
+              </View>
+            ) : (
+              <View style={styles.actions}>
+                <Button title="Retake" onPress={retake} style={{ flex: 1 }} />
+                <Button
+                  title="Post to feed"
+                  variant="primary"
+                  onPress={finalizePost}
+                  style={{ flex: 1 }}
+                  disabled={checkedTips.some((c) => !c)}
+                />
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -295,4 +369,15 @@ const styles = StyleSheet.create({
   fact: { backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: radius.sm },
   factText: { fontSize: 12.5, color: colors.inkDim, lineHeight: 18 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  postingStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: 18,
+    padding: 13,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 14,
+  },
+  postingMsg: { fontSize: 13, fontWeight: '600', color: colors.inkDim },
 });

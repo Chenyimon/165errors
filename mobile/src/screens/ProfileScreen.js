@@ -10,6 +10,7 @@ import { CHALLENGES, SPONSOR_CHALLENGES, BINS, metricValue, haversineKm } from '
 import { showToast } from '../lib/toast';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
+import Emoji from '../components/Emoji';
 
 export default function ProfileScreen() {
   const { profile, authed, logout } = useProfile();
@@ -67,7 +68,7 @@ export default function ProfileScreen() {
         <View style={styles.streakCard}>
           <View style={styles.streakTop}>
             <View style={styles.streakIcon}>
-              <Text style={{ fontSize: 20 }}>🔥</Text>
+              <Emoji symbol="🔥" size={20} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.streakTitle}>{profile.currentStreak > 0 ? 'Growing steady' : 'Ready to start'}</Text>
@@ -144,19 +145,25 @@ export default function ProfileScreen() {
           const val = metricValue(profile, s.metric);
           const pct = Math.min(100, Math.round((val / s.target) * 100));
           return (
-            <View key={s.id} style={styles.sponsorCard}>
-              <View style={[styles.sponsorBanner, { backgroundColor: s.color }]}>
-                <Text style={styles.sponsorBannerText}>{s.sponsor}</Text>
-              </View>
-              <View style={styles.sponsorBody}>
-                <Text style={styles.sponsorDesc}>{s.desc}</Text>
-                <View style={styles.challengeTrack}>
-                  <View style={[styles.challengeFill, { width: `${pct}%` }]} />
+            <View key={s.id} style={styles.sponsorCardShadow}>
+              <View style={styles.sponsorCard}>
+                <View style={[styles.sponsorBanner, { backgroundColor: s.color }]}>
+                  <Emoji symbol={s.icon} size={14} style={{ marginRight: 6 }} />
+                  <Text style={styles.sponsorBannerText}>{s.sponsor}</Text>
                 </View>
-                <Text style={styles.challengeProgress}>
-                  {Math.min(val, s.target)} / {s.target}
-                </Text>
-                <Text style={styles.sponsorReward}>🎁 {s.reward}</Text>
+                <View style={styles.sponsorBody}>
+                  <Text style={styles.sponsorDesc}>{s.desc}</Text>
+                  <View style={styles.challengeTrack}>
+                    <View style={[styles.challengeFill, { width: `${pct}%` }]} />
+                  </View>
+                  <Text style={styles.challengeProgress}>
+                    {Math.min(val, s.target)} / {s.target}
+                  </Text>
+                  <View style={styles.sponsorRewardRow}>
+                    <Emoji symbol="🎁" size={13} style={{ marginRight: 5 }} />
+                    <Text style={styles.sponsorReward}>{s.reward}</Text>
+                  </View>
+                </View>
               </View>
             </View>
           );
@@ -169,9 +176,10 @@ export default function ProfileScreen() {
             const pct = Math.round((count / maxCat) * 100);
             return (
               <View key={cat} style={styles.catRow}>
-                <Text style={styles.catName}>
-                  {imp.icon} {imp.label}
-                </Text>
+                <View style={styles.catNameRow}>
+                  <Emoji symbol={imp.icon} size={13} style={{ marginRight: 4 }} />
+                  <Text style={styles.catName}>{imp.label}</Text>
+                </View>
                 <View style={styles.catTrack}>
                   <View style={[styles.catFill, { width: `${pct}%` }]} />
                 </View>
@@ -185,10 +193,10 @@ export default function ProfileScreen() {
 
         <Text style={styles.sectionLabel}>Milestones</Text>
         {badges.length ? (
-          badges.map((b) => (
+          badges.map((b, i) => (
             <View key={b.label} style={styles.milestoneRow}>
-              <View style={styles.milestoneBadge}>
-                <Text style={{ fontSize: 18 }}>{b.icon}</Text>
+              <View style={[styles.milestoneBadge, { transform: [{ rotate: i % 2 === 0 ? '-4deg' : '4deg' }] }]}>
+                <Emoji symbol={b.icon} size={18} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.milestoneTitle}>{b.label}</Text>
@@ -254,7 +262,17 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   guestLink: { color: colors.forest, fontWeight: '700' },
-  streakCard: { backgroundColor: colors.forest, borderRadius: radius.lg, padding: 22, marginBottom: 22 },
+  streakCard: {
+    backgroundColor: colors.forest,
+    borderRadius: radius.lg,
+    padding: 22,
+    marginBottom: 22,
+    shadowColor: '#20362A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    elevation: 6,
+  },
   streakTop: { flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 16 },
   streakIcon: {
     width: 44,
@@ -285,6 +303,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     padding: 16,
     alignItems: 'center',
+    shadowColor: '#2C4736',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   num: { fontWeight: '800', fontSize: 24, color: colors.ink },
   accent: { color: colors.terracotta },
@@ -304,7 +327,8 @@ const styles = StyleSheet.create({
   goalTrack: { height: 10, backgroundColor: colors.track, borderRadius: 6, overflow: 'hidden', marginBottom: 6 },
   goalFill: { height: '100%', backgroundColor: colors.forest, borderRadius: 6 },
   catRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  catName: { width: 90, fontSize: 12.5, color: colors.inkDim },
+  catNameRow: { flexDirection: 'row', alignItems: 'center', width: 90 },
+  catName: { fontSize: 12.5, color: colors.inkDim },
   catTrack: { flex: 1, height: 8, backgroundColor: colors.track, borderRadius: 5, overflow: 'hidden' },
   catFill: { height: '100%', backgroundColor: colors.forest, borderRadius: 5 },
   catCount: { width: 20, textAlign: 'right', fontSize: 12.5, fontWeight: '700', color: colors.inkDim },
@@ -317,6 +341,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.terracotta,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#6B3B57',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   milestoneTitle: { fontWeight: '700', fontSize: 14, color: colors.ink },
   milestoneSub: { fontSize: 12, color: colors.inkDim, marginTop: 1 },
@@ -327,6 +356,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     padding: 14,
     marginBottom: 10,
+    shadowColor: '#2C4736',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   challengeTitle: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 2 },
   challengeDesc: { fontSize: 12, color: colors.inkDim, marginBottom: 10 },
@@ -334,24 +368,38 @@ const styles = StyleSheet.create({
   challengeFill: { height: '100%', backgroundColor: colors.forest, borderRadius: 5 },
   challengeFillComplete: { backgroundColor: colors.sun },
   challengeProgress: { fontSize: 11, color: colors.inkDim, textAlign: 'right' },
+  sponsorCardShadow: {
+    borderRadius: radius.lg,
+    marginBottom: 12,
+    shadowColor: '#2C4736',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
+  },
   sponsorCard: {
     borderRadius: radius.lg,
     overflow: 'hidden',
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  sponsorBanner: { paddingHorizontal: 16, paddingVertical: 12 },
+  sponsorBanner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   sponsorBannerText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   sponsorBody: { padding: 16, backgroundColor: colors.surface },
   sponsorDesc: { fontSize: 12.5, color: colors.inkDim, marginBottom: 10, lineHeight: 18 },
-  sponsorReward: { fontSize: 12, color: colors.terracotta, fontWeight: '700', marginTop: 8 },
+  sponsorRewardRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  sponsorReward: { fontSize: 12, color: colors.terracotta, fontWeight: '700' },
   binsCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
     padding: 16,
+    shadowColor: '#2C4736',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
   },
   binRow: {
     flexDirection: 'row',

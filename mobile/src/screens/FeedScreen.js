@@ -8,17 +8,20 @@ import { useProfile } from '../lib/ProfileContext';
 import AppHeader from '../components/AppHeader';
 import PostCard from '../components/PostCard';
 import Button from '../components/Button';
+import Emoji from '../components/Emoji';
+import CommentsModal from '../components/CommentsModal';
 
 export default function FeedScreen() {
   const navigation = useNavigation();
-  const { authed } = useProfile();
+  const { authed, guestTag } = useProfile();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activePostId, setActivePostId] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const posts = await getPosts();
+      const posts = await getPosts(guestTag);
 
       let friendSet = new Set();
       if (authed) {
@@ -53,7 +56,7 @@ export default function FeedScreen() {
     } catch (e) {
       console.warn('feed load failed', e);
     }
-  }, [authed]);
+  }, [authed, guestTag]);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,7 +82,7 @@ export default function FeedScreen() {
           item.type === 'header' ? (
             <Text style={styles.sectionLabel}>{item.label}</Text>
           ) : (
-            <PostCard post={item.post} />
+            <PostCard post={item.post} onCommentPress={setActivePostId} />
           )
         }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.forest} />}
@@ -87,7 +90,7 @@ export default function FeedScreen() {
         ListEmptyComponent={
           !loading ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyBig}>📸</Text>
+              <Emoji symbol="📸" size={34} style={styles.emptyBig} />
               <Text style={styles.emptyText}>No posts yet.{'\n'}Be the first to share what you're recycling.</Text>
               <Button
                 title="Take a photo"
@@ -98,6 +101,11 @@ export default function FeedScreen() {
             </View>
           ) : null
         }
+      />
+      <CommentsModal
+        postId={activePostId}
+        visible={!!activePostId}
+        onClose={() => setActivePostId(null)}
       />
     </View>
   );
@@ -124,6 +132,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 20 },
-  emptyBig: { fontSize: 34, marginBottom: 10 },
+  emptyBig: { marginBottom: 10 },
   emptyText: { fontSize: 13, lineHeight: 20, color: colors.inkDim, textAlign: 'center' },
 });

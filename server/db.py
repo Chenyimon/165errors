@@ -73,6 +73,28 @@ def init_db():
             """
         )
         _ensure_column(conn, "posts", "is_guest", "INTEGER NOT NULL DEFAULT 0")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS likes (
+                post_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                PRIMARY KEY (post_id, username)
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS comments (
+                id TEXT PRIMARY KEY,
+                post_id TEXT NOT NULL,
+                username TEXT NOT NULL,
+                is_guest INTEGER NOT NULL DEFAULT 0,
+                text TEXT NOT NULL,
+                ts INTEGER NOT NULL
+            )
+            """
+        )
 
 
 def _ensure_column(conn, table, column, decl):

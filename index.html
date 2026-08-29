@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>SORT/ED</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --page:#EDEAE0;
@@ -32,7 +32,7 @@
   body{
     background:var(--page);
     color:var(--ink);
-    font-family:'Inter',sans-serif;
+    font-family:'Nunito',sans-serif;
     min-height:100vh;
     display:flex;
     justify-content:center;
@@ -41,7 +41,8 @@
     width:100%;
     max-width:430px;
     min-height:100vh;
-    background:var(--surface);
+    background-color:var(--surface);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
     display:flex;
     flex-direction:column;
     position:relative;
@@ -76,7 +77,7 @@
   .auth-switch{
     display:block; width:100%; text-align:center; background:none; border:none;
     color:var(--forest); font-weight:700; font-size:12.5px; margin-top:14px; cursor:pointer;
-    font-family:'Inter',sans-serif;
+    font-family:'Nunito',sans-serif;
   }
   .auth-divider{
     display:flex; align-items:center; gap:10px; margin:18px 0 14px;
@@ -112,7 +113,7 @@
   .add-friend-row{display:flex; gap:8px; margin-bottom:6px;}
   .add-friend-row input{
     flex:1; padding:11px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
-    background:var(--surface-alt); color:var(--ink); font-size:14px; font-family:'Inter',sans-serif;
+    background:var(--surface-alt); color:var(--ink); font-size:14px; font-family:'Nunito',sans-serif;
   }
   .add-friend-row .btn{flex:none; padding:11px 16px;}
   .friend-row{display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--border);}
@@ -120,7 +121,7 @@
   .friend-pts{font-weight:800; font-size:13px; color:var(--terracotta);}
   .friend-remove{
     background:none; border:none; color:var(--ink-dim); font-size:11.5px; font-weight:700;
-    text-decoration:underline; cursor:pointer; font-family:'Inter',sans-serif;
+    text-decoration:underline; cursor:pointer; font-family:'Nunito',sans-serif;
   }
 
   /* ---------- Board toggle ---------- */
@@ -128,7 +129,7 @@
   .toggle-btn{
     flex:1; padding:10px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
     background:var(--surface); color:var(--ink-dim); font-weight:700; font-size:12.5px;
-    text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; font-family:'Inter',sans-serif;
+    text-transform:uppercase; letter-spacing:0.4px; cursor:pointer; font-family:'Nunito',sans-serif;
   }
   .toggle-btn.active{background:var(--forest); border-color:var(--forest); color:#fff;}
 
@@ -139,7 +140,7 @@
   @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 
   h1.view-title{
-    font-family:'Inter',sans-serif;
+    font-family:'Nunito',sans-serif;
     font-size:12px;
     font-weight:700;
     text-transform:uppercase;
@@ -168,7 +169,7 @@
   .scan-btn:active{transform:scale(0.96); background:var(--forest-deep);}
   .scan-btn svg{width:44px; height:44px;}
   .scan-btn .label{
-    font-family:'Inter',sans-serif;
+    font-family:'Nunito',sans-serif;
     font-size:13px; letter-spacing:1px; text-transform:uppercase; font-weight:700;
     color:#fff;
   }
@@ -190,12 +191,12 @@
     animation:spin .8s linear infinite;
   }
   @keyframes spin{to{transform:rotate(360deg);}}
-  .analyzing .msg{font-family:'Inter',sans-serif; font-size:12px; font-weight:600; color:var(--ink-dim); letter-spacing:0.5px;}
+  .analyzing .msg{font-family:'Nunito',sans-serif; font-size:12px; font-weight:600; color:var(--ink-dim); letter-spacing:0.5px;}
 
   /* ---------- Post preview (before posting) ---------- */
   .post-preview{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    overflow:hidden;
+    overflow:hidden; box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 10px 24px rgba(44,71,54,0.08);
   }
   .post-preview-image{width:100%; aspect-ratio:1/1; background:var(--surface-alt);}
   .post-preview-image img{width:100%; height:100%; object-fit:cover; display:block;}
@@ -204,7 +205,7 @@
   /* ---------- Feed post cards ---------- */
   .post-card{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    overflow:hidden; margin-bottom:16px;
+    overflow:hidden; margin-bottom:16px; box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 8px 20px rgba(44,71,54,0.07);
   }
   .post-header{display:flex; align-items:center; gap:10px; padding:12px 14px;}
   .post-avatar{
@@ -224,6 +225,33 @@
   .post-stat .num{display:block; font-weight:800; font-size:15px; color:var(--ink);}
   .post-stat .num.accent{color:var(--terracotta);}
   .post-stat .lbl{font-size:10px; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-dim); margin-top:2px;}
+  .post-actions{display:flex; gap:8px; margin-top:12px;}
+  .post-action-btn{
+    display:flex; align-items:center; gap:6px;
+    background:var(--surface-alt); border:1.5px solid var(--border); border-radius:20px;
+    padding:7px 14px; font-family:'Nunito',sans-serif; font-weight:700; font-size:13px; color:var(--ink-dim);
+    cursor:pointer; transition:transform .12s ease, opacity .12s ease;
+  }
+  .post-action-btn:active{transform:scale(0.95);}
+  .post-action-btn.liked{background:#F3DDE6; border-color:#F3DDE6; color:#8A3B5C;}
+  .like-icon{font-size:14px;}
+
+  /* ---------- Comments panel ---------- */
+  .comment-row{display:flex; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);}
+  .comment-avatar{
+    width:30px; height:30px; border-radius:50%; background:var(--forest); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex-shrink:0;
+  }
+  .comment-body{flex:1; min-width:0;}
+  .comment-name{font-weight:700; font-size:12.5px; color:var(--ink); display:inline;}
+  .comment-time{font-size:10.5px; color:var(--ink-dim); margin-left:6px;}
+  .comment-text{font-size:13px; color:var(--ink); line-height:1.4; margin-top:2px;}
+  .add-comment-row{display:flex; gap:8px; margin-top:14px;}
+  .add-comment-row input{
+    flex:1; padding:11px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
+    background:var(--surface-alt); color:var(--ink); font-size:14px; font-family:'Nunito',sans-serif;
+  }
+  .add-comment-row .btn{flex:none; padding:11px 16px;}
 
   /* ---------- Preview content (category pill, stats row, fun fact) ---------- */
   .ticket-cat{
@@ -247,7 +275,7 @@
   }
   .ticket-stat{flex:1; text-align:center;}
   .ticket-stat .num{
-    font-family:'Inter',sans-serif;
+    font-family:'Nunito',sans-serif;
     font-size:19px; font-weight:800; color:var(--ink);
   }
   .ticket-stat .num.accent{color:var(--terracotta);}
@@ -264,6 +292,11 @@
   }
   .ticket-fact b{color:var(--ink);}
   .reveal-actions{display:flex; gap:10px; margin-top:18px;}
+  .posting-status{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    width:100%; padding:13px; background:var(--surface-alt); border-radius:14px;
+  }
+  .posting-status .msg{font-family:'Nunito',sans-serif; font-size:13px; font-weight:600; color:var(--ink-dim);}
 
   /* ---------- Buttons ---------- */
   .btn{
@@ -273,14 +306,15 @@
     border:1.5px solid var(--border);
     background:var(--surface);
     color:var(--ink);
-    font-family:'Inter',sans-serif;
+    font-family:'Nunito',sans-serif;
     font-weight:700;
     font-size:14px;
     cursor:pointer;
     text-align:center;
+    transition:transform .12s ease, opacity .12s ease;
   }
   .btn.primary{background:var(--forest); border-color:var(--forest); color:#fff;}
-  .btn:active{opacity:0.8;}
+  .btn:active{opacity:0.85; transform:scale(0.97);}
   .btn:disabled{opacity:0.45; cursor:not-allowed;}
 
   /* ---------- Empty states ---------- */
@@ -309,13 +343,13 @@
 
   .form-card{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
-    padding:20px; text-align:center;
+    padding:20px; text-align:center; box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 10px 24px rgba(44,71,54,0.08);
   }
   .form-card p{font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;}
   .form-card input{
     width:100%; padding:12px; border-radius:var(--radius-sm); border:1.5px solid var(--border);
     background:var(--surface-alt); color:var(--ink); font-size:14px; margin-bottom:12px;
-    font-family:'Inter',sans-serif;
+    font-family:'Nunito',sans-serif;
   }
   .form-card input:focus{outline:none; border-color:var(--forest);}
 
@@ -327,6 +361,7 @@
   .streak-card{
     background:var(--forest); border-radius:var(--radius);
     padding:22px; color:#fff; margin-bottom:22px;
+    box-shadow:0 10px 24px rgba(32,54,42,0.28);
   }
   .streak-top{display:flex; gap:14px; align-items:center; margin-bottom:20px;}
   .streak-ring{
@@ -342,7 +377,7 @@
   }
   .streak-title{font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin-bottom:4px;}
   .streak-sub{font-size:12.5px; color:rgba(255,255,255,0.72); line-height:1.5;}
-  .streak-bottom .big{font-family:'Inter',sans-serif; font-weight:800; font-size:32px;}
+  .streak-bottom .big{font-family:'Nunito',sans-serif; font-weight:800; font-size:32px;}
   .streak-bottom .cap{display:block; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.6); margin-top:2px;}
 
   .profile-grid{
@@ -350,9 +385,9 @@
   }
   .profile-card{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
-    padding:16px; text-align:center;
+    padding:16px; text-align:center; box-shadow:0 1px 2px rgba(44,71,54,0.04), 0 6px 14px rgba(44,71,54,0.06);
   }
-  .profile-card .num{font-family:'Inter',sans-serif; font-size:24px; font-weight:800; color:var(--ink);}
+  .profile-card .num{font-family:'Nunito',sans-serif; font-size:24px; font-weight:800; color:var(--ink);}
   .profile-card .num.accent{color:var(--terracotta);}
   .profile-card .lbl{font-size:11px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;}
 
@@ -381,7 +416,10 @@
     background:var(--terracotta); color:#fff;
     display:flex; align-items:center; justify-content:center;
     font-size:19px; flex-shrink:0;
+    transform:rotate(-4deg);
+    box-shadow:0 4px 10px rgba(107,59,87,0.35);
   }
+  .milestone-row:nth-child(even) .milestone-badge{transform:rotate(4deg);}
   .milestone-title{font-weight:700; font-size:14px; color:var(--ink);}
   .milestone-sub{font-size:12px; color:var(--ink-dim); margin-top:1px;}
 
@@ -437,7 +475,7 @@
   .challenge-progress{font-size:11px; color:var(--ink-dim); text-align:right;}
 
   /* ---------- Sponsor challenges ---------- */
-  .sponsor-card{border-radius:var(--radius); overflow:hidden; margin-bottom:12px; border:1px solid var(--border);}
+  .sponsor-card{border-radius:var(--radius); overflow:hidden; margin-bottom:12px; border:1px solid var(--border); box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 8px 20px rgba(44,71,54,0.07);}
   .sponsor-banner{padding:12px 16px; color:#fff; display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px;}
   .sponsor-body{padding:14px 16px; background:var(--surface);}
   .sponsor-desc{font-size:12.5px; color:var(--ink-dim); margin-bottom:10px; line-height:1.5;}
@@ -471,7 +509,7 @@
   .tab-btn{
     flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
     background:none; border:none; color:var(--ink-dim); cursor:pointer;
-    padding:6px 0; font-family:'Inter',sans-serif; font-size:10.5px; font-weight:700;
+    padding:6px 0; font-family:'Nunito',sans-serif; font-size:10.5px; font-weight:700;
     letter-spacing:0.3px; text-transform:uppercase;
   }
   .tab-btn svg{width:20px; height:20px;}
@@ -496,6 +534,12 @@
     transition:all .25s ease; z-index:50; white-space:nowrap;
   }
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Twemoji ---------- */
+  img.emoji{
+    height:1.1em; width:1.1em; margin:0 .05em 0 .1em;
+    vertical-align:-0.2em; display:inline-block;
+  }
 </style>
 </head>
 <body>
@@ -595,15 +639,31 @@
     </div>
   </div>
 
+  <div id="comments-panel" class="panel-overlay" style="display:none;">
+    <div class="panel-sheet">
+      <div class="panel-header">
+        <div class="panel-title">Comments</div>
+        <button class="panel-close" id="comments-close" type="button">✕</button>
+      </div>
+      <div id="comments-body"></div>
+    </div>
+  </div>
+
   </div>
 
   <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
   <div id="toast"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
 <script>
 (function(){
   const STORAGE = window.storage;
+
+  const TWEMOJI_BASE = 'https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/';
+  function emojify(el){
+    if(window.twemoji) window.twemoji.parse(el || document.body, {base: TWEMOJI_BASE, folder:'svg', ext:'.svg'});
+  }
 
   // ---- Backend API config ----
   // After deploying the FastAPI service in /server (see README), replace these two values.
@@ -815,10 +875,35 @@
   }
   async function loadPosts(){
     try{
-      const res = await fetch(API_ENDPOINT + '/api/posts', {headers: baseHeaders()});
+      const qs = session.token ? '' : ('?guest_tag=' + encodeURIComponent(guestTag || ''));
+      const res = await fetch(API_ENDPOINT + '/api/posts' + qs, {headers: requestHeaders()});
       if(!res.ok) return [];
       return await res.json();
     }catch(e){ return []; }
+  }
+  async function toggleLike(postId){
+    const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + '/like', {
+      method:'POST', headers: requestHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({guest_tag: session.token ? null : guestTag})
+    });
+    if(!res.ok) throw new Error('like failed');
+    return res.json();
+  }
+  async function loadComments(postId){
+    try{
+      const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + '/comments', {headers: baseHeaders()});
+      if(!res.ok) return [];
+      return await res.json();
+    }catch(e){ return []; }
+  }
+  async function addComment(postId, text){
+    const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + '/comments', {
+      method:'POST', headers: requestHeaders({'Content-Type':'application/json'}),
+      body: JSON.stringify({text, guest_tag: session.token ? null : guestTag})
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.detail || 'Could not post comment');
+    return data;
   }
   function postImageUrl(path){
     if(!path) return '';
@@ -903,7 +988,39 @@
     cameraInput.value = '';
   });
 
-  const analyzingMsgs = ['READING MATERIAL...','ESTIMATING WEIGHT...','CALCULATING IMPACT...'];
+  const analyzingMsgs = [
+    'Hold up… saving the Earth. 🌎',
+    'Trash? We prefer "future resources."',
+    'Giving your waste a second chance…',
+    'Plot twist: your trash has value.',
+    'Your recycling streak is looking 🔥',
+    'Turning trash into treasure…',
+    'BRB, reducing your carbon footprint.',
+    'The planet called. It said thanks.',
+    'Certified eco moment. 🌱',
+    'Making waste work for you.',
+    'One less thing in the landfill…',
+    'Your trash just got an upgrade.',
+    'Loading… because even recycling needs a break.',
+    'Eco mode: ON.',
+    'Touch grass. Recycle first. 🌱'
+  ];
+  const postingMsgs = [
+    'Calculating your impact…',
+    'Counting your eco points…',
+    'Measuring your impact…',
+    'Adding another win for the planet…',
+    'Your next achievement is loading…',
+    'Updating the leaderboard…',
+    'Turning your recycling into points…',
+    'Another recycle, another step forward.',
+    'Your streak is growing…',
+    'Impact unlocked. ♻️',
+    'Points incoming…',
+    'Preparing your next challenge…',
+    "Scanning the good you've done…",
+    'Calculating how much waste you saved…'
+  ];
   async function handleFile(file){
     document.getElementById('scan-idle').style.display = 'none';
     document.getElementById('scan-reveal').style.display = 'none';
@@ -925,6 +1042,14 @@
       const mediaType = (meta.match(/data:(.*);base64/) || [,'image/jpeg'])[1];
 
       const result = await classifyImage(base64, mediaType);
+
+      if(result.needs_confirmation){
+        clearInterval(msgTimer);
+        document.getElementById('scan-analyzing').style.display = 'none';
+        renderRetakePrompt(imageDataUrl);
+        return;
+      }
+
       const {weightG, co2G, points, imp, category} = computeImpact(result.category, result.size_bucket);
 
       pendingPost = {
@@ -945,6 +1070,26 @@
       document.getElementById('scan-idle').style.display = 'flex';
       showToast("Couldn't read that scan — try again");
     }
+  }
+
+  function renderRetakePrompt(imageDataUrl){
+    const revealEl = document.getElementById('scan-reveal');
+    revealEl.innerHTML = `
+      <div class="post-preview">
+        <div class="post-preview-image"><img src="${imageDataUrl}" alt=""></div>
+        <div class="post-preview-body" style="text-align:center;">
+          <div class="prep-label" style="margin:0 0 8px;">Hmm, hard to tell</div>
+          <div class="ticket-item">That photo's a little too dark or blurry to identify clearly.</div>
+          <p style="color:var(--ink-dim); font-size:13px; margin:10px 0 0;">Try again with better lighting and the item centered in frame.</p>
+        </div>
+      </div>
+      <div class="reveal-actions">
+        <button class="btn primary" id="retake-retry-btn" style="width:100%;">Retake photo</button>
+      </div>
+    `;
+    revealEl.style.display = 'block';
+    emojify(revealEl);
+    document.getElementById('retake-retry-btn').addEventListener('click', resetScanView);
   }
 
   let prepChecked = [];
@@ -986,6 +1131,7 @@
       </div>
     `;
     revealEl.style.display = 'block';
+    emojify(revealEl);
     document.getElementById('retake-btn').addEventListener('click', resetScanView);
     document.getElementById('post-btn').addEventListener('click', ()=> finalizePost(pendingPost));
     revealEl.querySelectorAll('.prep-item').forEach(el=>{
@@ -1007,8 +1153,21 @@
   }
 
   async function finalizePost(pending){
-    const postBtn = document.getElementById('post-btn');
-    if(postBtn) postBtn.disabled = true;
+    const actionsEl = document.querySelector('.reveal-actions');
+    let msgIdx = 0;
+    if(actionsEl){
+      actionsEl.innerHTML = `
+        <div class="posting-status">
+          <div class="spinner"></div>
+          <div class="msg" id="posting-msg">${postingMsgs[0]}</div>
+        </div>
+      `;
+    }
+    const msgTimer = setInterval(()=>{
+      msgIdx = (msgIdx+1) % postingMsgs.length;
+      const msgEl = document.getElementById('posting-msg');
+      if(msgEl) msgEl.textContent = postingMsgs[msgIdx];
+    }, 1100);
 
     updateStreak();
     const finalPoints = applyStreakBonus(pending.points);
@@ -1034,12 +1193,14 @@
       });
       if(!res.ok) throw new Error('post failed: '+res.status);
 
+      clearInterval(msgTimer);
       resetScanView();
       showToast('Posted to the feed!');
       document.querySelector('.tab-btn[data-view="feed"]').click();
     }catch(err){
       console.error(err);
-      if(postBtn) postBtn.disabled = false;
+      clearInterval(msgTimer);
+      renderReview(pending);
       showToast("Couldn't post — try again");
     }
   }
@@ -1072,6 +1233,14 @@
           <div class="post-stat"><span class="num">${p.co2G}g</span><span class="lbl">CO2 saved</span></div>
           <div class="post-stat"><span class="num accent">+${p.points}</span><span class="lbl">Points</span></div>
         </div>
+        <div class="post-actions">
+          <button class="post-action-btn like-btn ${p.likedByMe ? 'liked' : ''}" data-post-id="${p.id}">
+            <span class="like-icon">${p.likedByMe ? '❤️' : '🤍'}</span> ${p.likeCount || 0}
+          </button>
+          <button class="post-action-btn comment-btn" data-post-id="${p.id}">
+            💬 ${p.commentCount || 0}
+          </button>
+        </div>
       </div>
     </div>`;
   }
@@ -1085,6 +1254,7 @@
       document.getElementById('feed-empty-scan-btn').addEventListener('click', ()=>{
         document.querySelector('.tab-btn[data-view="scan"]').click();
       });
+      emojify(el);
       return;
     }
 
@@ -1106,6 +1276,32 @@
     }else{
       el.innerHTML = posts.map(postCardHtml).join('');
     }
+    emojify(el);
+    bindPostActionButtons(el);
+  }
+
+  function bindPostActionButtons(container){
+    container.querySelectorAll('.like-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        btn.disabled = true;
+        try{
+          const data = await toggleLike(btn.dataset.postId);
+          btn.classList.toggle('liked', data.liked);
+          btn.querySelector('.like-icon').textContent = data.liked ? '❤️' : '🤍';
+          btn.lastChild.textContent = ' ' + data.likeCount;
+          emojify(btn);
+        }catch(e){
+          showToast("Couldn't update like — try again");
+        }
+        btn.disabled = false;
+      });
+    });
+    container.querySelectorAll('.comment-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.getElementById('comments-panel').style.display = 'flex';
+        renderCommentsPanel(btn.dataset.postId);
+      });
+    });
   }
 
   // ---------- Group events ----------
@@ -1169,11 +1365,13 @@
       });
     });
     bindEventButtons();
+    emojify(el);
 
     const listEl = document.getElementById('board-list');
     if(boardScope === 'friends' && !session.token){
       listEl.innerHTML = `<div class="empty-state"><div class="big">🔒</div><p>Log in to see how you and your friends stack up.</p><button class="btn primary" id="board-login-btn">Log in / Sign up</button></div>`;
       document.getElementById('board-login-btn').addEventListener('click', showAuthView);
+      emojify(listEl);
       return;
     }
 
@@ -1183,6 +1381,7 @@
       listEl.innerHTML = boardScope === 'friends'
         ? `<div class="empty-state"><div class="big">🧑‍🤝‍🧑</div><p>No friends yet.<br>Add some from the friends icon up top.</p></div>`
         : `<div class="empty-state"><div class="big">🏆</div><p>You're the first one here.<br>Scan something to take the top spot.</p></div>`;
+      emojify(listEl);
       return;
     }
     listEl.innerHTML = entries.map((e,i)=>`
@@ -1367,6 +1566,7 @@
     bindFindBinsButton();
     const loginBtn = document.getElementById('profile-login-btn');
     if(loginBtn) loginBtn.addEventListener('click', showAuthView);
+    emojify(el);
   }
 
   // ---------- Tabs ----------
@@ -1451,6 +1651,52 @@
   });
   document.getElementById('friends-close').addEventListener('click', ()=>{
     document.getElementById('friends-panel').style.display = 'none';
+  });
+
+  // ---------- Comments panel ----------
+  async function renderCommentsPanel(postId){
+    const body = document.getElementById('comments-body');
+    body.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
+    const comments = await loadComments(postId);
+    body.innerHTML = `
+      <div id="comments-list">
+        ${comments.length ? comments.map(c=>`
+          <div class="comment-row">
+            <div class="comment-avatar">${(c.username||'?').trim().charAt(0).toUpperCase()}</div>
+            <div class="comment-body">
+              <span class="comment-name">${escapeHtml(c.username)}</span>${c.isGuest ? ' <span class="guest-tag">Guest</span>' : ''}<span class="comment-time">${timeAgo(c.ts)}</span>
+              <div class="comment-text">${escapeHtml(c.text)}</div>
+            </div>
+          </div>
+        `).join('') : `<p style="color:var(--ink-dim); font-size:13px; padding:14px 0;">No comments yet — be the first to say something.</p>`}
+      </div>
+      <div id="add-comment-error" class="auth-error" style="display:none;"></div>
+      <div class="add-comment-row">
+        <input id="add-comment-input" placeholder="Write a comment…" maxlength="280">
+        <button class="btn primary" id="add-comment-btn">Post</button>
+      </div>
+    `;
+    emojify(body);
+    document.getElementById('add-comment-btn').addEventListener('click', async ()=>{
+      const input = document.getElementById('add-comment-input');
+      const errEl = document.getElementById('add-comment-error');
+      const text = input.value.trim();
+      errEl.style.display = 'none';
+      if(!text) return;
+      try{
+        await addComment(postId, text);
+        input.value = '';
+        renderCommentsPanel(postId);
+        renderFeed();
+      }catch(e){
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+      }
+    });
+  }
+
+  document.getElementById('comments-close').addEventListener('click', ()=>{
+    document.getElementById('comments-panel').style.display = 'none';
   });
 
   // ---------- Auth ----------

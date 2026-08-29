@@ -12,6 +12,7 @@ import { FriendsModalProvider } from './src/lib/FriendsModalContext';
 import ToastHost from './src/components/ToastHost';
 import FriendsModal from './src/components/FriendsModal';
 import AuthScreen from './src/screens/AuthScreen';
+import Emoji from './src/components/Emoji';
 
 import FeedScreen from './src/screens/FeedScreen';
 import BoardScreen from './src/screens/BoardScreen';
@@ -21,7 +22,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 const Tab = createBottomTabNavigator();
 
 function TabIcon({ emoji }) {
-  return <Text style={{ fontSize: 20 }}>{emoji}</Text>;
+  return <Emoji symbol={emoji} size={20} />;
 }
 
 function PlusTabIcon({ focused }) {

@@ -32,8 +32,12 @@ SYSTEM_PROMPT = (
     "respond with ONLY a raw JSON object, no markdown fences, no extra text, exactly in this shape: "
     '{"category":"plastic|glass|metal|paper|compost|other","item_name":"short 2-4 word name of the item",'
     '"size_bucket":"small|medium|large","fun_fact":"one short sentence, under 25 words, about the '
-    'environmental benefit of recycling this specific material"}. If the photo does not clearly show a '
-    'recyclable item, use category "other".'
+    'environmental benefit of recycling this specific material","needs_confirmation":true|false}. '
+    'Set "needs_confirmation" to true if the photo is too dark, too blurry or grainy, or otherwise not '
+    'clear enough for you to confidently identify the item — still fill in your best guess for the other '
+    'fields in that case, since the app will ask the person to retake the photo rather than use your guess. '
+    'If the photo is clear but simply does not show a recyclable item, use category "other" and leave '
+    '"needs_confirmation" false.'
 )
 
 VALID_CATEGORIES = {"plastic", "glass", "metal", "paper", "compost", "other"}
@@ -90,6 +94,21 @@ def format_guest_name(guest_tag: Optional[str]) -> str:
     return f"Guest {random.randint(1000, 9999)}"
 
 
+def guest_display_name(guest_tag: Optional[str]) -> Optional[str]:
+    """Like format_guest_name, but returns None (instead of a random fallback) for an
+    invalid/missing tag — used when merely looking up an identity, not creating one."""
+    if guest_tag and re.fullmatch(r"\d{4}", guest_tag):
+        return f"Guest {guest_tag}"
+    return None
+
+
+def resolve_identity(username: Optional[str], guest_tag: Optional[str]):
+    """Returns (display_name, is_guest) for whoever is making the request."""
+    if username:
+        return username, False
+    return format_guest_name(guest_tag), True
+
+
 class ClassifyRequest(BaseModel):
     image_base64: str
     media_type: str = "image/jpeg"
@@ -116,6 +135,15 @@ class ProfileIn(BaseModel):
 
 class FriendRequest(BaseModel):
     username: str
+
+
+class GuestIdentity(BaseModel):
+    guest_tag: Optional[str] = None
+
+
+class CommentIn(BaseModel):
+    text: str
+    guest_tag: Optional[str] = None
 
 
 DEFAULT_PROFILE = {
@@ -269,6 +297,7 @@ async def classify(req: ClassifyRequest, x_app_secret: Optional[str] = Header(de
         "item_name": str(result.get("item_name") or "Item")[:60],
         "size_bucket": size_bucket,
         "fun_fact": str(result.get("fun_fact") or "")[:280],
+        "needs_confirmation": bool(result.get("needs_confirmation", False)),
     }
 
 
@@ -403,27 +432,50 @@ def remove_friend(
 
 # ---------- Posts ----------
 @app.get("/api/posts")
-def list_posts(limit: int = 50):
+def list_posts(
+    limit: int = 50,
+    guest_tag: Optional[str] = None,
+    username: Optional[str] = Depends(get_optional_username),
+):
+    viewer = username or guest_display_name(guest_tag)
     with get_conn() as conn:
         rows = conn.execute(
             "SELECT * FROM posts ORDER BY ts DESC LIMIT ?", (min(max(limit, 1), 100),)
         ).fetchall()
-    return [
-        {
-            "id": r["id"],
-            "ts": r["ts"],
-            "username": r["username"],
-            "category": r["category"],
-            "itemName": r["item_name"],
-            "weightG": r["weight_g"],
-            "co2G": r["co2_g"],
-            "points": r["points"],
-            "funFact": r["fun_fact"],
-            "imageUrl": f"/uploads/{r['image_path']}" if r["image_path"] else None,
-            "isGuest": bool(r["is_guest"]),
-        }
-        for r in rows
-    ]
+        result = []
+        for r in rows:
+            like_count = conn.execute(
+                "SELECT COUNT(*) AS c FROM likes WHERE post_id = ?", (r["id"],)
+            ).fetchone()["c"]
+            comment_count = conn.execute(
+                "SELECT COUNT(*) AS c FROM comments WHERE post_id = ?", (r["id"],)
+            ).fetchone()["c"]
+            liked_by_me = False
+            if viewer:
+                liked_by_me = bool(
+                    conn.execute(
+                        "SELECT 1 FROM likes WHERE post_id = ? AND username = ?", (r["id"], viewer)
+                    ).fetchone()
+                )
+            result.append(
+                {
+                    "id": r["id"],
+                    "ts": r["ts"],
+                    "username": r["username"],
+                    "category": r["category"],
+                    "itemName": r["item_name"],
+                    "weightG": r["weight_g"],
+                    "co2G": r["co2_g"],
+                    "points": r["points"],
+                    "funFact": r["fun_fact"],
+                    "imageUrl": f"/uploads/{r['image_path']}" if r["image_path"] else None,
+                    "isGuest": bool(r["is_guest"]),
+                    "likeCount": like_count,
+                    "commentCount": comment_count,
+                    "likedByMe": liked_by_me,
+                }
+            )
+    return result
 
 
 @app.post("/api/posts")
@@ -480,4 +532,93 @@ async def create_post(
         "funFact": fun_fact.strip()[:280],
         "imageUrl": f"/uploads/{filename}",
         "isGuest": is_guest,
+        "likeCount": 0,
+        "commentCount": 0,
+        "likedByMe": False,
+    }
+
+
+# ---------- Likes ----------
+@app.post("/api/posts/{post_id}/like")
+def toggle_like(
+    post_id: str,
+    req: GuestIdentity,
+    username: Optional[str] = Depends(get_optional_username),
+    x_app_secret: Optional[str] = Header(default=None),
+):
+    check_secret(x_app_secret)
+    identity, _ = resolve_identity(username, req.guest_tag)
+    with get_conn() as conn:
+        exists = conn.execute("SELECT 1 FROM posts WHERE id = ?", (post_id,)).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail="post not found")
+        already_liked = conn.execute(
+            "SELECT 1 FROM likes WHERE post_id = ? AND username = ?", (post_id, identity)
+        ).fetchone()
+        if already_liked:
+            conn.execute("DELETE FROM likes WHERE post_id = ? AND username = ?", (post_id, identity))
+            liked = False
+        else:
+            conn.execute(
+                "INSERT INTO likes (post_id, username, created_at) VALUES (?, ?, ?)",
+                (post_id, identity, int(time.time())),
+            )
+            liked = True
+        like_count = conn.execute(
+            "SELECT COUNT(*) AS c FROM likes WHERE post_id = ?", (post_id,)
+        ).fetchone()["c"]
+    return {"liked": liked, "likeCount": like_count}
+
+
+# ---------- Comments ----------
+@app.get("/api/posts/{post_id}/comments")
+def list_comments(post_id: str):
+    with get_conn() as conn:
+        rows = conn.execute(
+            "SELECT * FROM comments WHERE post_id = ? ORDER BY ts ASC", (post_id,)
+        ).fetchall()
+    return [
+        {
+            "id": r["id"],
+            "postId": r["post_id"],
+            "username": r["username"],
+            "isGuest": bool(r["is_guest"]),
+            "text": r["text"],
+            "ts": r["ts"],
+        }
+        for r in rows
+    ]
+
+
+@app.post("/api/posts/{post_id}/comments")
+def create_comment(
+    post_id: str,
+    body: CommentIn,
+    username: Optional[str] = Depends(get_optional_username),
+    x_app_secret: Optional[str] = Header(default=None),
+):
+    check_secret(x_app_secret)
+    text = body.text.strip()[:280]
+    if not text:
+        raise HTTPException(status_code=400, detail="comment cannot be empty")
+    identity, is_guest = resolve_identity(username, body.guest_tag)
+
+    with get_conn() as conn:
+        exists = conn.execute("SELECT 1 FROM posts WHERE id = ?", (post_id,)).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail="post not found")
+        comment_id = uuid.uuid4().hex
+        ts = int(time.time() * 1000)
+        conn.execute(
+            "INSERT INTO comments (id, post_id, username, is_guest, text, ts) VALUES (?, ?, ?, ?, ?, ?)",
+            (comment_id, post_id, identity, int(is_guest), text, ts),
+        )
+
+    return {
+        "id": comment_id,
+        "postId": post_id,
+        "username": identity,
+        "isGuest": is_guest,
+        "text": text,
+        "ts": ts,
     }

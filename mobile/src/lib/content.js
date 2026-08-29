@@ -28,7 +28,8 @@ export const CHALLENGES = [
 export const SPONSOR_CHALLENGES = [
   {
     id: 'coke20',
-    sponsor: '🥤 Coca-Cola Recycling Challenge',
+    icon: '🥤',
+    sponsor: 'Coca-Cola Recycling Challenge',
     color: '#B3221E',
     desc: 'Recycle 20 bottles this month.',
     metric: 'category:plastic',
@@ -37,7 +38,8 @@ export const SPONSOR_CHALLENGES = [
   },
   {
     id: 'nus30',
-    sponsor: '🎓 NUS × SORT/ED Sustainability Challenge',
+    icon: '🎓',
+    sponsor: 'NUS × SORT/ED Sustainability Challenge',
     color: '#2C4736',
     desc: 'Recycle 30 items this semester as part of the campus drive.',
     metric: 'totalScans',

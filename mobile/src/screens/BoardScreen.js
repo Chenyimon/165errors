@@ -9,6 +9,7 @@ import { EVENTS } from '../lib/content';
 import { getJoinedEvents, setJoinedEvents } from '../lib/eventsStore';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
+import Emoji from '../components/Emoji';
 
 export default function BoardScreen() {
   const { profile, authed, logout } = useProfile();
@@ -73,7 +74,7 @@ export default function BoardScreen() {
 
         {scope === 'friends' && !authed ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyBig}>🔒</Text>
+            <Emoji symbol="🔒" size={34} style={styles.emptyBig} />
             <Text style={styles.emptyText}>Log in to see how you and your friends stack up.</Text>
             <Button title="Log in / Sign up" variant="primary" onPress={logout} style={{ marginTop: 14 }} />
           </View>
@@ -81,7 +82,7 @@ export default function BoardScreen() {
           <ActivityIndicator color={colors.forest} style={{ marginTop: 40 }} />
         ) : entries.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyBig}>{scope === 'friends' ? '🧑‍🤝‍🧑' : '🏆'}</Text>
+            <Emoji symbol={scope === 'friends' ? '🧑‍🤝‍🧑' : '🏆'} size={34} style={styles.emptyBig} />
             <Text style={styles.emptyText}>
               {scope === 'friends'
                 ? 'No friends yet.\nAdd some from the friends icon up top.'
@@ -107,10 +108,16 @@ export default function BoardScreen() {
           return (
             <View key={ev.id} style={styles.eventCard}>
               <Text style={styles.eventTitle}>{ev.title}</Text>
-              <Text style={styles.eventMeta}>📅 {ev.date}</Text>
-              <Text style={styles.eventMeta}>
-                📍 {ev.location} · {ev.spots} spots
-              </Text>
+              <View style={styles.eventMetaRow}>
+                <Emoji symbol="📅" size={12} style={{ marginRight: 5 }} />
+                <Text style={styles.eventMeta}>{ev.date}</Text>
+              </View>
+              <View style={styles.eventMetaRow}>
+                <Emoji symbol="📍" size={12} style={{ marginRight: 5 }} />
+                <Text style={styles.eventMeta}>
+                  {ev.location} · {ev.spots} spots
+                </Text>
+              </View>
               <Button
                 title={isJoined ? 'Joined ✓' : 'Join'}
                 variant={isJoined ? 'outline' : 'primary'}
@@ -150,7 +157,7 @@ const styles = StyleSheet.create({
   toggleText: { fontWeight: '700', fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4, color: colors.inkDim },
   toggleTextActive: { color: '#fff' },
   empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyBig: { fontSize: 34, marginBottom: 10 },
+  emptyBig: { marginBottom: 10 },
   emptyText: { fontSize: 13, lineHeight: 20, color: colors.inkDim, textAlign: 'center' },
   row: {
     flexDirection: 'row',
@@ -174,7 +181,13 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     padding: 14,
     marginBottom: 10,
+    shadowColor: '#2C4736',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
   },
   eventTitle: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 4 },
-  eventMeta: { fontSize: 12, color: colors.inkDim, marginBottom: 2 },
+  eventMetaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  eventMeta: { fontSize: 12, color: colors.inkDim },
 });
