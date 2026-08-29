@@ -8,6 +8,7 @@ __pycache__/
 server/.venv/
 server/__pycache__/
 server/*.db
+server/*.bak-*
 server/uploads/
 server/.env
 
