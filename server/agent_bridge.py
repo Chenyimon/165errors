@@ -20,8 +20,9 @@ if str(ROOT) not in sys.path:
 
 from agent import score_image_agentic  # noqa: E402
 
-# The agent knows more materials than the app's six categories, so several
-# map onto "other". The richer material survives in the `items` array.
+# Most agent materials have a matching app category. The ones with no recycling
+# route at all (styrofoam, tissue, ceramic) collapse to "other"; the richer
+# material always survives in the `items` array.
 CATEGORY_MAP = {
     "plastic": "plastic",
     "glass": "glass",
@@ -29,9 +30,9 @@ CATEGORY_MAP = {
     "paper": "paper",
     "cardboard": "paper",
     "food_waste": "compost",
-    "battery": "other",
-    "ewaste": "other",
-    "textile": "other",
+    "battery": "battery",
+    "ewaste": "ewaste",
+    "textile": "textile",
     "styrofoam": "other",
     "tissue": "other",
     "ceramic": "other",

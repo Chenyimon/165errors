@@ -94,7 +94,8 @@ export default function ScanScreen() {
         return;
       }
 
-      const { weightG, co2G, points, imp, category } = computeImpact(result.category, result.size_bucket);
+      const { weightG, co2G, points, imp, category } = computeImpact(
+        result.category, result.size_bucket, result.points);
 
       setPending({
         category,
