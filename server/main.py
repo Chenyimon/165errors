@@ -29,6 +29,21 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 
+# Scores decided by /api/classify, remembered so /api/posts can use the
+# server's own number instead of trusting whatever the app sends. Keyed by a
+# scan_id handed back to the client. In memory only - a scan is posted within
+# seconds, and a restart just falls back to the clamped path below.
+SCAN_CACHE: dict = {}
+SCAN_TTL_SECONDS = 900
+
+# The app multiplies points by a daily-streak bonus of 1 + min(streak,10)*0.1,
+# so a legitimate post can be up to twice the base score, never more.
+MAX_STREAK_MULTIPLIER = 2.0
+
+# Ceiling for a post we cannot tie back to a scan: the highest-scoring item
+# (a battery) at the largest size and quantity, with the full streak bonus.
+MAX_UNVERIFIED_POINTS = 400
+
 VALID_CATEGORIES = {"plastic", "glass", "metal", "paper", "compost",
                     "battery", "ewaste", "textile", "other"}
 VALID_SIZES = {"small", "medium", "large"}
@@ -159,6 +174,23 @@ def row_to_profile(row) -> dict:
     }
 
 
+def remember_scan(result: dict) -> str:
+    """Store what we scored, and return an id the client sends back on post."""
+    now = time.time()
+    for k, v in list(SCAN_CACHE.items()):
+        if now - v["at"] > SCAN_TTL_SECONDS:
+            SCAN_CACHE.pop(k, None)
+
+    scan_id = uuid.uuid4().hex
+    SCAN_CACHE[scan_id] = {
+        "at": now,
+        "category": result.get("category", "other"),
+        "item_name": result.get("item_name", "Item"),
+        "points": int(result.get("points", 0)),
+    }
+    return scan_id
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -237,11 +269,16 @@ async def classify(req: ClassifyRequest, x_app_secret: Optional[str] = Header(de
 
     # The agent makes several blocking API calls, so keep it off the event loop.
     try:
-        return await run_in_threadpool(
+        result = await run_in_threadpool(
             agent_bridge.classify, req.image_base64, req.media_type
         )
     except Exception:
         raise HTTPException(status_code=502, detail="classification failed")
+
+    # Hand back an id so the post can be scored from what we decided here,
+    # not from whatever number the app computes.
+    result["scan_id"] = remember_scan(result)
+    return result
 
 
 # ---------- Profile ----------
@@ -544,6 +581,7 @@ async def create_post(
     co2_g: int = Form(...),
     points: int = Form(...),
     fun_fact: str = Form(""),
+    scan_id: Optional[str] = Form(None),
     guest_tag: Optional[str] = Form(None),
     image: UploadFile = File(...),
     username: Optional[str] = Depends(get_optional_username),
@@ -558,6 +596,22 @@ async def create_post(
         category = "other"
     if image.content_type not in VALID_MEDIA_TYPES:
         raise HTTPException(status_code=400, detail="unsupported media type")
+
+    # The app is not trusted to say what a scan was worth. When it sends back
+    # the scan_id from /api/classify we use the score we decided there, and
+    # allow only the daily-streak bonus on top. Without a scan_id - an older
+    # client, or a scan older than the cache - we cannot verify the item, so we
+    # just cap the claim at what the best possible item could have earned.
+    scan = SCAN_CACHE.get(scan_id) if scan_id else None
+    if scan is not None:
+        category = scan["category"]
+        item_name = scan["item_name"]
+        base = scan["points"]
+        points = max(0, min(points, round(base * MAX_STREAK_MULTIPLIER)))
+        if base == 0:
+            points = 0        # no recycling route, no points, whatever is claimed
+    else:
+        points = max(0, min(points, MAX_UNVERIFIED_POINTS))
 
     post_id = uuid.uuid4().hex
     ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}[image.content_type]

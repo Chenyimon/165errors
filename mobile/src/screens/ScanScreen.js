@@ -108,6 +108,7 @@ export default function ScanScreen() {
         points,
         aiFunFact: result.fun_fact || '',
         imageUri: resizedUri,
+        scanId: result.scan_id,
       });
       setCheckedTips((PREP_TIPS[category] || []).map(() => false));
       setCaptionText('');
@@ -166,6 +167,7 @@ export default function ScanScreen() {
         imageUri: pending.imageUri,
         mediaType: 'image/jpeg',
         guestTag,
+        scanId: pending.scanId,
       });
 
       const badgesBefore = computeBadges(profile);
