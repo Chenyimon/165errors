@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -78,6 +78,16 @@ export default function ScanScreen() {
   const [captionText, setCaptionText] = useState('');
   const [celebrate, setCelebrate] = useState(0);
   const scrollRef = useRef(null);
+
+  useEffect(() => {
+    // Fires once the keyboard has actually finished animating in, which is
+    // far more reliable than guessing a timeout — a fixed delay can fire
+    // before the keyboard (and the resulting layout shift) is done.
+    const sub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+    return () => sub.remove();
+  }, []);
 
   async function startScan() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -216,7 +226,7 @@ export default function ScanScreen() {
       <AppHeader />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -321,13 +331,6 @@ export default function ScanScreen() {
                   placeholderTextColor={colors.inkDim}
                   multiline
                   maxLength={280}
-                  onFocus={() => {
-                    // Keep the caption visible above the keyboard instead of
-                    // letting it get covered — the input sits near the
-                    // bottom of the scroll content, right before the
-                    // action buttons, so scrolling to the end reveals it.
-                    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
-                  }}
                 />
               </View>
             </View>
