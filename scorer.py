@@ -41,21 +41,70 @@ class Perception(BaseModel):
     note: str = Field(description="One short friendly sentence for the user about recycling this item")
 
 
-# Points per item. Higher for materials that are harmful or hard to recycle,
-# so the game rewards the recycling that actually matters - not just volume.
+# Points are built from two separate things, because they disagree.
+#
+#   HARM      - how much damage this does if it is thrown away instead.
+#               Singapore incinerates its waste and buries the ash at Semakau,
+#               which is projected to be full by 2035. Batteries ignite in
+#               collection trucks and sorting facilities; e-waste releases toxic
+#               fumes when burnt and leaches heavy metals into soil and water.
+#               Glass and metal are inert - they waste landfill space but poison
+#               nothing.
+#
+#   RECOVERY  - how much energy recycling saves against making the thing new.
+#               Aluminium ~95%, plastic ~76%, paper ~60%, glass only ~30%.
+#
+# Harm is weighted x3 because the app exists to prevent damage, not to run a
+# scrap yard. That is why a battery outscores an aluminium can eight to one
+# even though aluminium is the more valuable material to recover.
+#
+# Sources: NEA e-waste EPR programme; MSE statements on e-waste toxicity;
+# published energy-saving figures per material. Both tables are tunable - if
+# you disagree with a weighting, change the number, not the formula.
+
+HARM = {           # 0-10: damage caused by wrongly disposing of it
+    "battery":   10,   # fire risk plus lithium, cobalt, nickel, cadmium
+    "ewaste":     9,   # heavy metals, toxic fumes when incinerated
+    "plastic":    5,   # fossil-derived, burns to CO2, persists if it escapes
+    "textile":    3,   # synthetic fibres and dyes; bulky in landfill
+    "glass":      2,   # inert, but occupies Semakau space permanently
+    "metal":      2,   # inert
+    "cardboard":  1,   # biodegradable
+    "paper":      1,   # biodegradable
+    "other":      1,
+}
+
+RECOVERY = {       # 0-10: energy saved by recycling vs making it new
+    "metal":     10,   # aluminium recycling saves ~95%
+    "ewaste":     8,   # gold, copper, rare earths worth recovering
+    "plastic":    8,   # ~76%
+    "battery":    7,   # lithium, cobalt, nickel recoverable
+    "cardboard":  6,   # ~60%
+    "paper":      6,   # ~60%
+    "textile":    4,   # fibre recovery is limited
+    "glass":      3,   # only ~30%
+    "other":      2,
+}
+
+HARM_WEIGHT = 3
+
+# Materials with no recycling route in Singapore score nothing, whatever their
+# harm - paying out would teach people to bag them up and feel good about it.
+NO_ROUTE = {"styrofoam", "tissue", "ceramic", "food_waste"}
+
+
+def base_points(material: str) -> int:
+    """Points for one small, clean item of this material."""
+    if material in NO_ROUTE:
+        return 0
+    harm = HARM.get(material, HARM["other"])
+    recovery = RECOVERY.get(material, RECOVERY["other"])
+    return harm * HARM_WEIGHT + recovery
+
+
 MATERIAL_POINTS = {
-    "paper": 5,
-    "cardboard": 6,
-    "glass": 8,
-    "plastic": 10,
-    "metal": 12,
-    "ewaste": 30,
-    "battery": 40,
-    "textile": 4,
-    "styrofoam": 2,
-    "tissue": 1,
-    "ceramic": 2,
-    "other": 3,
+    m: base_points(m)
+    for m in set(HARM) | set(RECOVERY) | NO_ROUTE
 }
 
 SIZE_MULTIPLIER = {"small": 1.0, "medium": 1.5, "large": 2.5}
