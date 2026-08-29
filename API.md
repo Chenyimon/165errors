@@ -2,7 +2,13 @@
 
 **This is the agreement between the three of us. Don't change it without telling the others.**
 
-Base URL while developing: `http://<laptop-ip>:8000`
+**Base URL:** `https://canine-cupbearer-cringing.ngrok-free.dev`
+
+This is the only URL anyone needs. It works from any network - office wifi,
+4G, home - and it does not change. Must be `https://`.
+
+It is live only while the backend laptop is running `./start.sh`. If every
+request suddenly fails, that is almost always why.
 
 ---
 
