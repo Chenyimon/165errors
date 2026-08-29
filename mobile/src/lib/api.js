@@ -3,28 +3,67 @@
 export const API_BASE = 'https://canine-cupbearer-cringing.ngrok-free.dev';
 const APP_SECRET = 'REPLACE_WITH_YOUR_OWN_SECRET';
 
-function authHeaders(extra) {
+let authToken = null;
+export function setAuthToken(token) {
+  authToken = token;
+}
+
+function baseHeaders(extra) {
   return { 'x-app-secret': APP_SECRET, 'ngrok-skip-browser-warning': 'true', ...(extra || {}) };
+}
+function authHeaders(extra) {
+  return { ...baseHeaders(extra), Authorization: `Bearer ${authToken || ''}` };
+}
+function requestHeaders(extra) {
+  return authToken ? authHeaders(extra) : baseHeaders(extra);
 }
 
 export async function classifyImage(base64, mediaType) {
   const res = await fetch(`${API_BASE}/api/classify`, {
     method: 'POST',
-    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    headers: baseHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ image_base64: base64, media_type: mediaType }),
   });
   if (!res.ok) throw new Error('classify failed: ' + res.status);
   return res.json();
 }
 
-export async function getProfile(deviceId) {
-  const res = await fetch(`${API_BASE}/api/profile/${deviceId}`, { headers: authHeaders() });
+export async function signup(username, password) {
+  const res = await fetch(`${API_BASE}/api/auth/signup`, {
+    method: 'POST',
+    headers: baseHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || 'Signup failed');
+  return data;
+}
+
+export async function login(username, password) {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: baseHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || 'Login failed');
+  return data;
+}
+
+export async function logout() {
+  try {
+    await fetch(`${API_BASE}/api/auth/logout`, { method: 'POST', headers: authHeaders() });
+  } catch (e) {}
+}
+
+export async function getMyProfile() {
+  const res = await fetch(`${API_BASE}/api/profile`, { headers: authHeaders() });
   if (!res.ok) throw new Error('profile fetch failed: ' + res.status);
   return res.json();
 }
 
-export async function putProfile(deviceId, profile) {
-  const res = await fetch(`${API_BASE}/api/profile/${deviceId}`, {
+export async function putMyProfile(profile) {
+  const res = await fetch(`${API_BASE}/api/profile`, {
     method: 'PUT',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(profile),
@@ -33,27 +72,53 @@ export async function putProfile(deviceId, profile) {
   return res.json();
 }
 
-export async function getLeaderboard() {
-  const res = await fetch(`${API_BASE}/api/leaderboard`, { headers: authHeaders() });
+export async function getLeaderboard(scope) {
+  const url = scope === 'friends' ? `${API_BASE}/api/leaderboard/friends` : `${API_BASE}/api/leaderboard`;
+  const headers = scope === 'friends' ? authHeaders() : baseHeaders();
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error('leaderboard fetch failed: ' + res.status);
   return res.json();
 }
 
+export async function getFriends() {
+  const res = await fetch(`${API_BASE}/api/friends`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('friends fetch failed: ' + res.status);
+  return res.json();
+}
+
+export async function addFriend(username) {
+  const res = await fetch(`${API_BASE}/api/friends`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ username }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || 'Could not add friend');
+  return data;
+}
+
+export async function removeFriend(username) {
+  await fetch(`${API_BASE}/api/friends/${encodeURIComponent(username)}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+}
+
 export async function getPosts() {
-  const res = await fetch(`${API_BASE}/api/posts`, { headers: authHeaders() });
+  const res = await fetch(`${API_BASE}/api/posts`, { headers: baseHeaders() });
   if (!res.ok) throw new Error('feed fetch failed: ' + res.status);
   return res.json();
 }
 
-export async function createPost({ username, category, itemName, weightG, co2G, points, funFact, imageUri, mediaType }) {
+export async function createPost({ category, itemName, weightG, co2G, points, funFact, imageUri, mediaType, guestTag }) {
   const form = new FormData();
-  form.append('username', username);
   form.append('category', category);
   form.append('item_name', itemName);
   form.append('weight_g', String(weightG));
   form.append('co2_g', String(co2G));
   form.append('points', String(points));
   form.append('fun_fact', funFact || '');
+  if (!authToken && guestTag) form.append('guest_tag', guestTag);
   form.append('image', {
     uri: imageUri,
     name: mediaType === 'image/png' ? 'photo.png' : 'photo.jpg',
@@ -62,7 +127,7 @@ export async function createPost({ username, category, itemName, weightG, co2G, 
 
   const res = await fetch(`${API_BASE}/api/posts`, {
     method: 'POST',
-    headers: authHeaders(),
+    headers: requestHeaders(),
     body: form,
   });
   if (!res.ok) throw new Error('post failed: ' + res.status);

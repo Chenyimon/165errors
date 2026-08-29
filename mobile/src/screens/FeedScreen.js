@@ -3,25 +3,57 @@ import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 import { colors } from '../theme';
-import { getPosts } from '../lib/api';
+import { getPosts, getFriends } from '../lib/api';
+import { useProfile } from '../lib/ProfileContext';
 import AppHeader from '../components/AppHeader';
 import PostCard from '../components/PostCard';
 import Button from '../components/Button';
 
 export default function FeedScreen() {
   const navigation = useNavigation();
-  const [posts, setPosts] = useState([]);
+  const { authed } = useProfile();
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const data = await getPosts();
-      setPosts(data);
+      const posts = await getPosts();
+
+      let friendSet = new Set();
+      if (authed) {
+        try {
+          const friends = await getFriends();
+          friendSet = new Set(friends.map((f) => f.username));
+        } catch (e) {
+          // not fatal — just falls back to a flat feed
+        }
+      }
+
+      if (friendSet.size > 0) {
+        const friendPosts = posts.filter((p) => friendSet.has(p.username));
+        const otherPosts = posts.filter((p) => !friendSet.has(p.username));
+        const next = [];
+        if (friendPosts.length) {
+          next.push({ type: 'header', key: 'h-friends', label: 'From your friends' });
+          friendPosts.forEach((p) => next.push({ type: 'post', key: p.id, post: p }));
+        }
+        if (otherPosts.length) {
+          next.push({
+            type: 'header',
+            key: 'h-other',
+            label: friendPosts.length ? 'More from the community' : 'Community',
+          });
+          otherPosts.forEach((p) => next.push({ type: 'post', key: p.id, post: p }));
+        }
+        setItems(next);
+      } else {
+        setItems(posts.map((p) => ({ type: 'post', key: p.id, post: p })));
+      }
     } catch (e) {
       console.warn('feed load failed', e);
     }
-  }, []);
+  }, [authed]);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,10 +72,16 @@ export default function FeedScreen() {
     <View style={styles.screen}>
       <AppHeader />
       <FlatList
-        data={posts}
-        keyExtractor={(p) => p.id}
+        data={items}
+        keyExtractor={(item) => item.key}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => <PostCard post={item} />}
+        renderItem={({ item }) =>
+          item.type === 'header' ? (
+            <Text style={styles.sectionLabel}>{item.label}</Text>
+          ) : (
+            <PostCard post={item.post} />
+          )
+        }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.forest} />}
         ListHeaderComponent={<Text style={styles.title}>Community feed</Text>}
         ListEmptyComponent={
@@ -75,6 +113,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     color: colors.inkDim,
     marginBottom: 18,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    color: colors.inkDim,
+    marginTop: 4,
+    marginBottom: 10,
   },
   empty: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 20 },
   emptyBig: { fontSize: 34, marginBottom: 10 },

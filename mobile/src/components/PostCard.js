@@ -19,7 +19,14 @@ export default function PostCard({ post }) {
           <Text style={styles.avatarText}>{initial}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{post.username || 'Someone'}</Text>
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>{post.username || 'Someone'}</Text>
+            {post.isGuest ? (
+              <View style={styles.guestTag}>
+                <Text style={styles.guestTagText}>Guest</Text>
+              </View>
+            ) : null}
+          </View>
           <Text style={styles.time}>{timeAgo(post.ts)}</Text>
         </View>
         <Tag tag={imp.tag} label={`${imp.icon} ${imp.label}`} />
@@ -71,7 +78,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { fontWeight: '700', fontSize: 13.5, color: colors.ink },
+  guestTag: { backgroundColor: colors.track, borderRadius: 20, paddingHorizontal: 8, paddingVertical: 2 },
+  guestTagText: { fontSize: 9.5, fontWeight: '700', textTransform: 'uppercase', color: colors.inkDim },
   time: { fontSize: 11, color: colors.inkDim, marginTop: 1 },
   image: { width: '100%', aspectRatio: 1, backgroundColor: colors.surfaceAlt },
   body: { padding: 14 },

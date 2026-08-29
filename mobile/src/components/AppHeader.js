@@ -1,27 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../theme';
-import { useProfile } from '../lib/ProfileContext';
+import { useFriendsModal } from '../lib/FriendsModalContext';
 
 export default function AppHeader() {
-  const { profile } = useProfile();
   const insets = useSafeAreaInsets();
+  const { open } = useFriendsModal();
 
   return (
     <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
       <Text style={styles.wordmark}>
         SORT<Text style={styles.slash}>/</Text>ED
       </Text>
-      <View style={styles.stats}>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>🔥 {profile.currentStreak}</Text>
-        </View>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>🌿 {profile.totalPoints}</Text>
-        </View>
-      </View>
+      <Pressable style={styles.friendsBtn} onPress={open} accessibilityLabel="Friends">
+        <Text style={styles.friendsIcon}>👥</Text>
+      </Pressable>
     </View>
   );
 }
@@ -39,7 +34,13 @@ const styles = StyleSheet.create({
   },
   wordmark: { fontWeight: '800', fontSize: 20, color: colors.forest },
   slash: { color: colors.terracotta },
-  stats: { flexDirection: 'row', gap: 10 },
-  pill: { backgroundColor: colors.sage, borderRadius: 20, paddingHorizontal: 11, paddingVertical: 6 },
-  pillText: { color: colors.forest, fontWeight: '700', fontSize: 13 },
+  friendsBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.sage,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  friendsIcon: { fontSize: 16 },
 });

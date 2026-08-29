@@ -15,9 +15,37 @@ def init_db():
     with get_conn() as conn:
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                salt TEXT NOT NULL,
+                password_hash TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS sessions (
+                token TEXT PRIMARY KEY,
+                username TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS friends (
+                username TEXT NOT NULL,
+                friend_username TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                PRIMARY KEY (username, friend_username)
+            )
+            """
+        )
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS profiles (
-                device_id TEXT PRIMARY KEY,
-                username TEXT,
+                username TEXT PRIMARY KEY,
                 total_points INTEGER NOT NULL DEFAULT 0,
                 current_streak INTEGER NOT NULL DEFAULT 0,
                 longest_streak INTEGER NOT NULL DEFAULT 0,
@@ -39,10 +67,18 @@ def init_db():
                 co2_g INTEGER NOT NULL,
                 points INTEGER NOT NULL,
                 fun_fact TEXT,
-                image_path TEXT
+                image_path TEXT,
+                is_guest INTEGER NOT NULL DEFAULT 0
             )
             """
         )
+        _ensure_column(conn, "posts", "is_guest", "INTEGER NOT NULL DEFAULT 0")
+
+
+def _ensure_column(conn, table, column, decl):
+    cols = {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
 
 
 @contextmanager

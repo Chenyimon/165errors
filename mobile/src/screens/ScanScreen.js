@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TextInput, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Image, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { useNavigation } from '@react-navigation/native';
@@ -20,11 +20,10 @@ const ANALYZING_MESSAGES = ['READING MATERIAL...', 'ESTIMATING WEIGHT...', 'CALC
 
 export default function ScanScreen() {
   const navigation = useNavigation();
-  const { profile, saveProfile } = useProfile();
-  const [stage, setStage] = useState('idle'); // idle | analyzing | review | naming
+  const { profile, saveProfile, guestTag } = useProfile();
+  const [stage, setStage] = useState('idle'); // idle | analyzing | review
   const [analyzingMsg, setAnalyzingMsg] = useState(ANALYZING_MESSAGES[0]);
   const [pending, setPending] = useState(null);
-  const [nameInput, setNameInput] = useState('');
   const [posting, setPosting] = useState(false);
   const [checkedTips, setCheckedTips] = useState([]);
 
@@ -88,31 +87,14 @@ export default function ScanScreen() {
     setCheckedTips((prev) => prev.map((v, i) => (i === idx ? !v : v)));
   }
 
-  function onPressPost() {
-    if (!profile.username) {
-      setStage('naming');
-      return;
-    }
-    finalizePost();
-  }
-
-  async function confirmName() {
-    const val = nameInput.trim();
-    if (!val) return;
-    await saveProfile({ ...profile, username: val });
-    finalizePost(val);
-  }
-
-  async function finalizePost(usernameOverride) {
+  async function finalizePost() {
     if (!pending) return;
     setPosting(true);
     try {
-      const username = usernameOverride || profile.username;
       const streaked = updateStreak(profile);
       const finalPoints = applyStreakBonus(streaked, pending.points);
       const nextProfile = {
         ...streaked,
-        username,
         totalPoints: streaked.totalPoints + finalPoints,
         totalScans: streaked.totalScans + 1,
         byCategory: {
@@ -123,7 +105,6 @@ export default function ScanScreen() {
       await saveProfile(nextProfile);
 
       await createPost({
-        username,
         category: pending.category,
         itemName: pending.itemName,
         weightG: pending.weightG,
@@ -132,6 +113,7 @@ export default function ScanScreen() {
         funFact: pending.funFact,
         imageUri: pending.imageUri,
         mediaType: 'image/jpeg',
+        guestTag,
       });
 
       setPending(null);
@@ -171,7 +153,7 @@ export default function ScanScreen() {
           </View>
         )}
 
-        {(stage === 'review' || stage === 'naming') && pending && (
+        {stage === 'review' && pending && (
           <View>
             <View style={styles.previewCard}>
               <Image source={{ uri: pending.imageUri }} style={styles.previewImage} />
@@ -228,37 +210,16 @@ export default function ScanScreen() {
               </View>
             </View>
 
-            {stage === 'review' ? (
-              <View style={styles.actions}>
-                <Button title="Retake" onPress={retake} style={{ flex: 1 }} />
-                <Button
-                  title="Post to feed"
-                  variant="primary"
-                  onPress={onPressPost}
-                  style={{ flex: 1 }}
-                  disabled={posting || checkedTips.some((c) => !c)}
-                />
-              </View>
-            ) : (
-              <View style={styles.nameCard}>
-                <Text style={styles.cardText}>Add your name to post to the community feed.</Text>
-                <TextInput
-                  value={nameInput}
-                  onChangeText={setNameInput}
-                  placeholder="Your name"
-                  maxLength={24}
-                  style={styles.input}
-                  placeholderTextColor={colors.inkDim}
-                />
-                <Button
-                  title="Continue"
-                  variant="primary"
-                  onPress={confirmName}
-                  style={{ width: '100%' }}
-                  disabled={posting}
-                />
-              </View>
-            )}
+            <View style={styles.actions}>
+              <Button title="Retake" onPress={retake} style={{ flex: 1 }} />
+              <Button
+                title="Post to feed"
+                variant="primary"
+                onPress={finalizePost}
+                style={{ flex: 1 }}
+                disabled={posting || checkedTips.some((c) => !c)}
+              />
+            </View>
           </View>
         )}
       </View>
@@ -334,25 +295,4 @@ const styles = StyleSheet.create({
   fact: { backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: radius.sm },
   factText: { fontSize: 12.5, color: colors.inkDim, lineHeight: 18 },
   actions: { flexDirection: 'row', gap: 10, marginTop: 18 },
-  nameCard: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: 20,
-    marginTop: 18,
-    alignItems: 'center',
-  },
-  cardText: { fontSize: 13, color: colors.inkDim, marginBottom: 14, lineHeight: 19, textAlign: 'center' },
-  input: {
-    width: '100%',
-    padding: 12,
-    borderRadius: radius.sm,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceAlt,
-    color: colors.ink,
-    fontSize: 14,
-    marginBottom: 12,
-  },
 });

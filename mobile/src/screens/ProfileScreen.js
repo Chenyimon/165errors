@@ -12,7 +12,7 @@ import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 
 export default function ProfileScreen() {
-  const { profile } = useProfile();
+  const { profile, authed, logout } = useProfile();
   const [binResults, setBinResults] = useState(null);
   const [locating, setLocating] = useState(false);
 
@@ -52,7 +52,17 @@ export default function ProfileScreen() {
       <AppHeader />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Your impact</Text>
-        <Text style={styles.name}>{profile.username || 'Set a name in Board'}</Text>
+        <View style={styles.heroBlock}>
+          <Text style={styles.name}>{profile.username || 'Guest'}</Text>
+          {!authed ? (
+            <Text style={styles.guestNote}>
+              Browsing as a guest — your progress stays on this device only.{' '}
+              <Text style={styles.guestLink} onPress={logout}>
+                Log in to save it
+              </Text>
+            </Text>
+          ) : null}
+        </View>
 
         <View style={styles.streakCard}>
           <View style={styles.streakTop}>
@@ -234,7 +244,16 @@ const styles = StyleSheet.create({
     color: colors.inkDim,
     marginBottom: 18,
   },
-  name: { fontWeight: '700', fontSize: 22, color: colors.ink, textAlign: 'center', marginBottom: 22 },
+  heroBlock: { marginBottom: 22 },
+  name: { fontWeight: '700', fontSize: 22, color: colors.ink, textAlign: 'center' },
+  guestNote: {
+    fontSize: 12.5,
+    color: colors.inkDim,
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  guestLink: { color: colors.forest, fontWeight: '700' },
   streakCard: { backgroundColor: colors.forest, borderRadius: radius.lg, padding: 22, marginBottom: 22 },
   streakTop: { flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 16 },
   streakIcon: {

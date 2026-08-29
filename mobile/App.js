@@ -2,13 +2,16 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { colors } from './src/theme';
-import { ProfileProvider } from './src/lib/ProfileContext';
+import { ProfileProvider, useProfile } from './src/lib/ProfileContext';
+import { FriendsModalProvider } from './src/lib/FriendsModalContext';
 import ToastHost from './src/components/ToastHost';
+import FriendsModal from './src/components/FriendsModal';
+import AuthScreen from './src/screens/AuthScreen';
 
 import FeedScreen from './src/screens/FeedScreen';
 import BoardScreen from './src/screens/BoardScreen';
@@ -29,55 +32,71 @@ function PlusTabIcon({ focused }) {
   );
 }
 
+function Root() {
+  const { authed, guest, loading } = useProfile();
+
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator color={colors.forest} />
+      </View>
+    );
+  }
+
+  if (!authed && !guest) {
+    return <AuthScreen />;
+  }
+
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.forest,
+          tabBarInactiveTintColor: colors.inkDim,
+          tabBarStyle: styles.tabBar,
+          tabBarLabelStyle: styles.tabLabel,
+        }}
+      >
+        <Tab.Screen name="Feed" component={FeedScreen} options={{ tabBarIcon: () => <TabIcon emoji="🏠" /> }} />
+        <Tab.Screen name="Board" component={BoardScreen} options={{ tabBarIcon: () => <TabIcon emoji="🏆" /> }} />
+        <Tab.Screen
+          name="Scan"
+          component={ScanScreen}
+          options={{
+            tabBarLabel: 'Post',
+            tabBarIcon: ({ focused }) => <PlusTabIcon focused={focused} />,
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{ tabBarLabel: 'You', tabBarIcon: () => <TabIcon emoji="👤" /> }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <ProfileProvider>
-        <View style={{ flex: 1 }}>
-          <StatusBar style="dark" />
-          <NavigationContainer>
-            <Tab.Navigator
-              screenOptions={{
-                headerShown: false,
-                tabBarActiveTintColor: colors.forest,
-                tabBarInactiveTintColor: colors.inkDim,
-                tabBarStyle: styles.tabBar,
-                tabBarLabelStyle: styles.tabLabel,
-              }}
-            >
-              <Tab.Screen
-                name="Feed"
-                component={FeedScreen}
-                options={{ tabBarIcon: () => <TabIcon emoji="🏠" /> }}
-              />
-              <Tab.Screen
-                name="Board"
-                component={BoardScreen}
-                options={{ tabBarIcon: () => <TabIcon emoji="🏆" /> }}
-              />
-              <Tab.Screen
-                name="Scan"
-                component={ScanScreen}
-                options={{
-                  tabBarLabel: 'Post',
-                  tabBarIcon: ({ focused }) => <PlusTabIcon focused={focused} />,
-                }}
-              />
-              <Tab.Screen
-                name="Profile"
-                component={ProfileScreen}
-                options={{ tabBarLabel: 'You', tabBarIcon: () => <TabIcon emoji="👤" /> }}
-              />
-            </Tab.Navigator>
-          </NavigationContainer>
-          <ToastHost />
-        </View>
+        <FriendsModalProvider>
+          <View style={{ flex: 1 }}>
+            <StatusBar style="dark" />
+            <Root />
+            <FriendsModal />
+            <ToastHost />
+          </View>
+        </FriendsModalProvider>
       </ProfileProvider>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
   tabBar: {
     backgroundColor: colors.surface,
     borderTopColor: colors.border,
