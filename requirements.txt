@@ -1,0 +1,7 @@
+anthropic
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pillow
+pillow-heif

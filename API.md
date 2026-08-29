@@ -61,6 +61,122 @@ half-object, so the app can always read the same fields.
 
 ---
 
+## `POST /score-agent` (richer, slower)
+
+Same request body as `/score`. Use this one if you want to tell the user
+**where** to recycle, not just how many points.
+
+Claude actually looks up Singapore's rules mid-reasoning (2-3 tool calls),
+so it knows a battery must go to an ALBA e-waste bin rather than the blue bin.
+
+**Takes ~10 seconds** rather than ~4. Budget for that in the loading state.
+
+### Response - every `/score` field, plus three
+
+```json
+{
+  "item_type": "AA batteries",
+  "material": "battery",
+  "recyclable": true,
+  "points": 80,
+  "confidence": 0.9,
+  "reasoning": "Pop these into an ALBA e-waste bin at your nearest mall or CC - they can spark fires in blue bins!",
+  "error": null,
+
+  "blue_bin": false,
+  "where_to_recycle": "ALBA E-Waste bin",
+  "tool_calls": 3
+}
+```
+
+| Extra field | Type | Notes |
+|---|---|---|
+| `blue_bin` | boolean | False means it must NOT go in the blue bin |
+| `where_to_recycle` | string | e.g. "Blue recycling bin", "ALBA E-Waste bin" |
+| `tool_calls` | integer | How many lookups the agent made - nice to show in a demo |
+| `items` | array | One entry per distinct object in the photo - see below |
+| `needs_confirmation` | boolean | True when the model wasn't sure - ask the user to confirm |
+
+### Multiple objects in one photo
+
+A photo can hold several things. Each gets its own entry in `items`, scored on
+its own material - a battery beside a can is 40 + 12, not 80. The top-level
+`points` is the total.
+
+```json
+{
+  "item_type": "aluminium drinks can + clear PET bottle",
+  "points": 22,
+  "items": [
+    { "name": "aluminium drinks can", "material": "metal",
+      "quantity": 1, "points": 12, "blue_bin": true,
+      "where_to_recycle": "Blue commingled recycling bin" },
+    { "name": "clear PET bottle", "material": "plastic",
+      "quantity": 1, "points": 10, "blue_bin": true,
+      "where_to_recycle": "Blue commingled recycling bin" }
+  ]
+}
+```
+
+**Simplest UI:** show the total `points` big, and list `items` underneath -
+name, points and destination per row. `items` always has at least one entry, so
+you can render the list unconditionally.
+
+`quantity` covers several of the *same* thing (three identical cans is one
+entry with quantity 3). Different materials are always separate entries.
+
+### When the model isn't sure
+
+There are three tiers, decided on the server:
+
+| Confidence | What comes back | What the app should do |
+|---|---|---|
+| below 0.6 | `points: 0`, `error` set, `needs_confirmation: true` | Show the `error` and ask for a retake |
+| 0.6 - 0.85 | normal points, `needs_confirmation: true` | Award, and offer a correction |
+| above 0.85 | normal points, `needs_confirmation: false` | Award silently |
+
+Measured: a clear photo of a bubble tea cup scores 0.90 and is identified
+correctly. The same cup shot dark and blurred scores 0.50 - and without the
+bottom tier it confidently reported a roll of tissue paper and paid out 6
+points for a cardboard tube that was not there.
+
+```js
+if (result.error) {
+  show(result.error);                    // covers unusable photos too
+} else if (result.needs_confirmation) {
+  award(result.points);
+  offerCorrection();                     // "Did we get this right?"
+} else {
+  award(result.points);
+}
+```
+
+```jsx
+{result.needs_confirmation && (
+  <Pressable onPress={openCorrection} style={styles.uncertain}>
+    <Text>Did we get this right? Tap to fix.</Text>
+  </Pressable>
+)}
+```
+
+Confidence is the model's own estimate, not a calibrated probability - it can be
+confidently wrong. Treat it as a reason to ask, never as a guarantee.
+
+### Retail displays are refused
+
+Photographing a shop shelf returns `points: 0` with an `error`. Tested: a rack
+of NUS t-shirts scores nothing, while a used towel on the ground scores
+normally.
+
+**Because the extra fields are additive, code written against `/score` works
+unchanged against `/score-agent`.** Switching is a one-word URL change.
+
+Suggested UI: show `where_to_recycle` as a badge under the points, and when
+`blue_bin` is false, colour it differently - that is the app's most useful
+moment.
+
+---
+
 ## `GET /health`
 
 Returns `{"status": "ok"}`. Hit this first to check the phone can reach the laptop.
@@ -81,7 +197,11 @@ Returns `{"status": "ok"}`. Hit this first to check the phone can reach the lapt
 
 ## Timing
 
-Expect **3-8 seconds**. The app needs a loading state.
+- `/score` and `/score-upload`: **~4 seconds**
+- `/score-agent`: **~10 seconds** (it makes 2-3 rule lookups)
+
+Either way the app needs a loading state. The 20s timeout in the client code
+below covers both.
 
 ---
 
@@ -197,11 +317,27 @@ Rendering:
 {result && !result.error && (
   <View>
     <Text style={styles.points}>+{result.points}</Text>
-    <Text style={styles.item}>{result.item_type}</Text>
     <Text style={styles.note}>{result.reasoning}</Text>
+
+    {/* /score-agent returns one row per object found */}
+    {result.items?.map((item, i) => (
+      <View key={i} style={styles.row}>
+        <Text style={styles.itemName}>
+          {item.quantity > 1 ? `${item.quantity}x ` : ""}{item.name}
+        </Text>
+        <Text style={styles.itemPoints}>+{item.points}</Text>
+        <Text style={[styles.bin, !item.blue_bin && styles.divert]}>
+          {item.where_to_recycle}
+        </Text>
+      </View>
+    ))}
   </View>
 )}
 ```
+
+Colour the row differently when `blue_bin` is false - that is the app telling
+someone their battery would have started a fire, which is the most useful thing
+it does.
 
 ## Adding a timeout
 
