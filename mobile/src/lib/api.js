@@ -142,6 +142,22 @@ export async function createPost({ category, itemName, weightG, co2G, points, fu
   return res.json();
 }
 
+export async function uploadAvatar(uri, mediaType) {
+  const form = new FormData();
+  form.append('image', {
+    uri,
+    name: mediaType === 'image/png' ? 'avatar.png' : 'avatar.jpg',
+    type: mediaType,
+  });
+  const res = await fetch(`${API_BASE}/api/profile/avatar`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form,
+  });
+  if (!res.ok) throw new Error('avatar upload failed: ' + res.status);
+  return res.json();
+}
+
 export async function toggleLike(postId, guestTag) {
   const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}/like`, {
     method: 'POST',

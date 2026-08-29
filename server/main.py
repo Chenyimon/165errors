@@ -141,6 +141,7 @@ DEFAULT_PROFILE = {
     "lastScanDate": None,
     "totalScans": 0,
     "byCategory": {},
+    "avatarUrl": None,
 }
 
 
@@ -152,6 +153,7 @@ def row_to_profile(row) -> dict:
         "lastScanDate": row["last_scan_date"],
         "totalScans": row["total_scans"],
         "byCategory": json.loads(row["by_category"] or "{}"),
+        "avatarUrl": f"/uploads/{row['avatar_path']}" if row["avatar_path"] else None,
     }
 
 
@@ -282,14 +284,64 @@ def put_my_profile(
     return {"ok": True}
 
 
+@app.post("/api/profile/avatar")
+async def upload_avatar(
+    image: UploadFile = File(...),
+    username: str = Depends(get_current_username),
+    x_app_secret: Optional[str] = Header(default=None),
+):
+    check_secret(x_app_secret)
+    if image.content_type not in VALID_MEDIA_TYPES:
+        raise HTTPException(status_code=400, detail="unsupported media type")
+
+    ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}[image.content_type]
+    filename = f"avatar-{username}-{uuid.uuid4().hex[:8]}{ext}"
+    contents = await image.read()
+
+    with get_conn() as conn:
+        conn.execute("INSERT OR IGNORE INTO profiles (username) VALUES (?)", (username,))
+        old_row = conn.execute("SELECT avatar_path FROM profiles WHERE username = ?", (username,)).fetchone()
+        old_path = old_row["avatar_path"] if old_row else None
+        conn.execute("UPDATE profiles SET avatar_path = ? WHERE username = ?", (filename, username))
+
+    (UPLOAD_DIR / filename).write_bytes(contents)
+    if old_path:
+        try:
+            (UPLOAD_DIR / old_path).unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    return {"avatarUrl": f"/uploads/{filename}"}
+
+
 # ---------- Leaderboard ----------
 @app.get("/api/leaderboard")
 def leaderboard():
+    # Built from posts (not profiles) so guests — who have no profiles row —
+    # show up here too. A guest's points are the sum of what their posts earned;
+    # for real accounts this always equals profiles.total_points, since that's
+    # the only thing that ever increments it.
     with get_conn() as conn:
         rows = conn.execute(
-            "SELECT username, total_points FROM profiles ORDER BY total_points DESC LIMIT 100"
+            """
+            SELECT p.username AS username, SUM(p.points) AS points, MAX(p.is_guest) AS is_guest,
+                   pr.avatar_path AS avatar_path
+            FROM posts p
+            LEFT JOIN profiles pr ON pr.username = p.username
+            GROUP BY p.username
+            ORDER BY points DESC
+            LIMIT 100
+            """
         ).fetchall()
-    return [{"username": r["username"], "points": r["total_points"]} for r in rows]
+    return [
+        {
+            "username": r["username"],
+            "points": r["points"],
+            "isGuest": bool(r["is_guest"]),
+            "avatarUrl": f"/uploads/{r['avatar_path']}" if r["avatar_path"] else None,
+        }
+        for r in rows
+    ]
 
 
 @app.get("/api/leaderboard/friends")
@@ -384,6 +436,10 @@ def _enrich_post(conn, r, viewer: Optional[str]) -> dict:
                 "SELECT 1 FROM likes WHERE post_id = ? AND username = ?", (r["id"], viewer)
             ).fetchone()
         )
+    avatar_row = conn.execute(
+        "SELECT avatar_path FROM profiles WHERE username = ?", (r["username"],)
+    ).fetchone()
+    avatar_url = f"/uploads/{avatar_row['avatar_path']}" if avatar_row and avatar_row["avatar_path"] else None
     return {
         "id": r["id"],
         "ts": r["ts"],
@@ -395,6 +451,7 @@ def _enrich_post(conn, r, viewer: Optional[str]) -> dict:
         "points": r["points"],
         "funFact": r["fun_fact"],
         "imageUrl": f"/uploads/{r['image_path']}" if r["image_path"] else None,
+        "avatarUrl": avatar_url,
         "isGuest": bool(r["is_guest"]),
         "likeCount": like_count,
         "commentCount": comment_count,

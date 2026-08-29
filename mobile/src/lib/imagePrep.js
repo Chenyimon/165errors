@@ -21,3 +21,16 @@ export async function prepareImageForUpload(uri) {
     mediaType: 'image/jpeg',
   };
 }
+
+const AVATAR_DIMENSION = 480;
+
+// Profile pictures render small (a header/post-card circle), so there's no need
+// for the full 1024px post-upload size here.
+export async function prepareAvatarForUpload(uri) {
+  const manipulated = await ImageManipulator.manipulateAsync(
+    uri,
+    [{ resize: { width: AVATAR_DIMENSION } }],
+    { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
+  );
+  return { uri: manipulated.uri, mediaType: 'image/jpeg' };
+}

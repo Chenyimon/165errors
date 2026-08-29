@@ -7,6 +7,7 @@ import {
   signup as apiSignup,
   getMyProfile,
   putMyProfile,
+  uploadAvatar as apiUploadAvatar,
   setAuthToken,
 } from './api';
 import { defaultProfile } from './profileStore';
@@ -114,6 +115,11 @@ export function ProfileProvider({ children }) {
     setGuest(false);
   }, [persistSession]);
 
+  const changeAvatar = useCallback(async (uri, mediaType) => {
+    const data = await apiUploadAvatar(uri, mediaType);
+    setProfile((prev) => ({ ...prev, avatarUrl: data.avatarUrl }));
+  }, []);
+
   const continueAsGuest = useCallback(async () => {
     await AsyncStorage.setItem(GUEST_OPT_IN_KEY, 'true');
     await loadGuestProfile();
@@ -149,7 +155,19 @@ export function ProfileProvider({ children }) {
 
   return (
     <ProfileContext.Provider
-      value={{ profile, saveProfile, login, signup, logout, continueAsGuest, loading, authed, guest, guestTag }}
+      value={{
+        profile,
+        saveProfile,
+        changeAvatar,
+        login,
+        signup,
+        logout,
+        continueAsGuest,
+        loading,
+        authed,
+        guest,
+        guestTag,
+      }}
     >
       {children}
     </ProfileContext.Provider>

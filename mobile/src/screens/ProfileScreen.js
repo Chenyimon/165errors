@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Image } from 'react-native';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 
 import { colors, radius } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
+import { imageSource } from '../lib/api';
+import { prepareAvatarForUpload } from '../lib/imagePrep';
 import { IMPACT } from '../lib/impact';
 import { computeBadges, nextMilestone } from '../lib/profileStore';
 import { CHALLENGES, SPONSOR_CHALLENGES, BINS, metricValue, haversineKm } from '../lib/content';
@@ -13,9 +16,34 @@ import Button from '../components/Button';
 import Emoji from '../components/Emoji';
 
 export default function ProfileScreen() {
-  const { profile, authed, logout } = useProfile();
+  const { profile, authed, logout, changeAvatar } = useProfile();
   const [binResults, setBinResults] = useState(null);
   const [locating, setLocating] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  async function pickAvatar() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showToast('Photo library access is needed to set a profile picture');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (result.canceled || !result.assets?.length) return;
+    setUploadingAvatar(true);
+    try {
+      const { uri, mediaType } = await prepareAvatarForUpload(result.assets[0].uri);
+      await changeAvatar(uri, mediaType);
+      showToast('Profile photo updated');
+    } catch (e) {
+      showToast("Couldn't update photo — try again");
+    }
+    setUploadingAvatar(false);
+  }
 
   const badges = useMemo(() => computeBadges(profile), [profile]);
   const cats = useMemo(
@@ -54,6 +82,20 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Your impact</Text>
         <View style={styles.heroBlock}>
+          <View style={styles.avatarWrap}>
+            {profile.avatarUrl ? (
+              <Image source={imageSource(profile.avatarUrl)} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarInitial}>{(profile.username || '?').trim().charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            {authed ? (
+              <Pressable style={styles.avatarEditBtn} onPress={pickAvatar} disabled={uploadingAvatar}>
+                <Emoji symbol="📷" size={13} />
+              </Pressable>
+            ) : null}
+          </View>
           <Text style={styles.name}>{profile.username || 'Guest'}</Text>
           {!authed ? (
             <Text style={styles.guestNote}>
@@ -252,7 +294,24 @@ const styles = StyleSheet.create({
     color: colors.inkDim,
     marginBottom: 18,
   },
-  heroBlock: { marginBottom: 22 },
+  heroBlock: { marginBottom: 22, alignItems: 'center' },
+  avatarWrap: { width: 88, height: 88, marginBottom: 12 },
+  avatar: { width: 88, height: 88, borderRadius: 44 },
+  avatarFallback: { backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
+  avatarInitial: { fontWeight: '700', fontSize: 32, color: colors.forest },
+  avatarEditBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.forest,
+    borderWidth: 2,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   name: { fontWeight: '700', fontSize: 22, color: colors.ink, textAlign: 'center' },
   guestNote: {
     fontSize: 12.5,

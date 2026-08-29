@@ -55,6 +55,7 @@ def init_db():
             )
             """
         )
+        _ensure_column(conn, "profiles", "avatar_path", "TEXT")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS posts (

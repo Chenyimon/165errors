@@ -59,9 +59,13 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
     <View style={styles.cardShadow}>
       <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
+          {post.avatarUrl ? (
+            <Image source={imageSource(post.avatarUrl)} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarFallback]}>
+              <Text style={styles.avatarText}>{initial}</Text>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <View style={styles.nameRow}>
               <Text style={styles.name}>{post.username || 'Someone'}</Text>
@@ -145,6 +149,8 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
+  },
+  avatarFallback: {
     backgroundColor: colors.forest,
     alignItems: 'center',
     justifyContent: 'center',
