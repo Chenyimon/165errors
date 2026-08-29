@@ -27,7 +27,8 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 
-VALID_CATEGORIES = {"plastic", "glass", "metal", "paper", "compost", "other"}
+VALID_CATEGORIES = {"plastic", "glass", "metal", "paper", "compost",
+                    "battery", "ewaste", "textile", "other"}
 VALID_SIZES = {"small", "medium", "large"}
 VALID_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_]{3,24}$")
