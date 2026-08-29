@@ -22,7 +22,9 @@ ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 APP_SECRET = os.environ.get("APP_SECRET")
 ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "*")
 
-UPLOAD_DIR = Path(__file__).parent / "uploads"
+# On a hosted platform, set UPLOAD_DIR to a mounted volume - otherwise every
+# restart wipes the uploaded photos.
+UPLOAD_DIR = Path(os.environ.get("UPLOAD_DIR", Path(__file__).parent / "uploads"))
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 
