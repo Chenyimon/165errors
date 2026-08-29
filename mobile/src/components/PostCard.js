@@ -6,6 +6,7 @@ import { IMPACT } from '../lib/impact';
 import { timeAgo } from '../lib/format';
 import { imageUrl } from '../lib/api';
 import Tag from './Tag';
+import RecycleBadge from './RecycleBadge';
 
 export default function PostCard({ post }) {
   const imp = IMPACT[post.category] || IMPACT.other;
@@ -27,7 +28,10 @@ export default function PostCard({ post }) {
       {post.imageUrl ? <Image source={{ uri: imageUrl(post.imageUrl) }} style={styles.image} /> : null}
 
       <View style={styles.body}>
-        <Text style={styles.item}>{post.itemName}</Text>
+        <View style={styles.itemRow}>
+          <Text style={styles.item}>{post.itemName}</Text>
+          <RecycleBadge recyclable={imp.recyclable} label={imp.recycleLabel} />
+        </View>
         {post.funFact ? <Text style={styles.fact}>{post.funFact}</Text> : null}
         <View style={styles.stats}>
           <View style={styles.stat}>
@@ -71,7 +75,8 @@ const styles = StyleSheet.create({
   time: { fontSize: 11, color: colors.inkDim, marginTop: 1 },
   image: { width: '100%', aspectRatio: 1, backgroundColor: colors.surfaceAlt },
   body: { padding: 14 },
-  item: { fontWeight: '700', fontSize: 17, color: colors.ink, marginBottom: 6 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 },
+  item: { fontWeight: '700', fontSize: 17, color: colors.ink },
   fact: { fontSize: 12.5, color: colors.inkDim, lineHeight: 18, marginBottom: 12 },
   stats: {
     flexDirection: 'row',

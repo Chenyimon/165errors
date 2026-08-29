@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { colors, radius } from '../theme';
 import { computeImpact, IMPACT } from '../lib/impact';
+import { PREP_TIPS } from '../lib/content';
 import { classifyImage, createPost } from '../lib/api';
 import { useProfile } from '../lib/ProfileContext';
 import { updateStreak, applyStreakBonus } from '../lib/profileStore';
@@ -13,6 +14,7 @@ import { showToast } from '../lib/toast';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 import Tag from '../components/Tag';
+import RecycleBadge from '../components/RecycleBadge';
 
 const ANALYZING_MESSAGES = ['READING MATERIAL...', 'ESTIMATING WEIGHT...', 'CALCULATING IMPACT...'];
 
@@ -24,6 +26,7 @@ export default function ScanScreen() {
   const [pending, setPending] = useState(null);
   const [nameInput, setNameInput] = useState('');
   const [posting, setPosting] = useState(false);
+  const [checkedTips, setCheckedTips] = useState([]);
 
   async function startScan() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -64,6 +67,7 @@ export default function ScanScreen() {
         funFact: result.fun_fact || '',
         imageUri: manipulated.uri,
       });
+      setCheckedTips((PREP_TIPS[category] || []).map(() => false));
       clearInterval(msgTimer);
       setStage('review');
     } catch (err) {
@@ -76,7 +80,12 @@ export default function ScanScreen() {
 
   function retake() {
     setPending(null);
+    setCheckedTips([]);
     setStage('idle');
+  }
+
+  function toggleTip(idx) {
+    setCheckedTips((prev) => prev.map((v, i) => (i === idx ? !v : v)));
   }
 
   function onPressPost() {
@@ -126,6 +135,7 @@ export default function ScanScreen() {
       });
 
       setPending(null);
+      setCheckedTips([]);
       setStage('idle');
       showToast('Posted to the feed!');
       navigation.navigate('Feed');
@@ -166,10 +176,16 @@ export default function ScanScreen() {
             <View style={styles.previewCard}>
               <Image source={{ uri: pending.imageUri }} style={styles.previewImage} />
               <View style={styles.previewBody}>
-                <Tag
-                  tag={IMPACT[pending.category].tag}
-                  label={`${IMPACT[pending.category].icon} ${IMPACT[pending.category].label}`}
-                />
+                <View style={styles.tagRow}>
+                  <Tag
+                    tag={IMPACT[pending.category].tag}
+                    label={`${IMPACT[pending.category].icon} ${IMPACT[pending.category].label}`}
+                  />
+                  <RecycleBadge
+                    recyclable={IMPACT[pending.category].recyclable}
+                    label={IMPACT[pending.category].recycleLabel}
+                  />
+                </View>
                 <Text style={styles.itemName}>{pending.itemName}</Text>
                 <View style={styles.statsRow}>
                   <View style={styles.stat}>
@@ -193,6 +209,22 @@ export default function ScanScreen() {
                     </Text>
                   </View>
                 ) : null}
+
+                {(PREP_TIPS[pending.category] || []).length > 0 && (
+                  <>
+                    <Text style={styles.prepLabel}>Before you toss it in</Text>
+                    <View>
+                      {(PREP_TIPS[pending.category] || []).map((tip, i) => (
+                        <Pressable key={i} style={styles.prepItem} onPress={() => toggleTip(i)}>
+                          <View style={[styles.prepCheck, checkedTips[i] && styles.prepCheckChecked]}>
+                            {checkedTips[i] ? <Text style={styles.prepCheckMark}>✓</Text> : null}
+                          </View>
+                          <Text style={[styles.prepText, checkedTips[i] && styles.prepTextDone]}>{tip}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </>
+                )}
               </View>
             </View>
 
@@ -204,7 +236,7 @@ export default function ScanScreen() {
                   variant="primary"
                   onPress={onPressPost}
                   style={{ flex: 1 }}
-                  disabled={posting}
+                  disabled={posting || checkedTips.some((c) => !c)}
                 />
               </View>
             ) : (
@@ -269,7 +301,32 @@ const styles = StyleSheet.create({
   },
   previewImage: { width: '100%', aspectRatio: 1, backgroundColor: colors.surfaceAlt },
   previewBody: { padding: 18 },
+  tagRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   itemName: { fontWeight: '700', fontSize: 20, color: colors.ink, marginTop: 10, marginBottom: 14 },
+  prepLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: colors.inkDim,
+    marginTop: 16,
+    marginBottom: 6,
+  },
+  prepItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 7 },
+  prepCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  prepCheckChecked: { backgroundColor: colors.forest, borderColor: colors.forest },
+  prepCheckMark: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  prepText: { flex: 1, fontSize: 13, color: colors.ink },
+  prepTextDone: { color: colors.inkDim, textDecorationLine: 'line-through' },
   statsRow: { flexDirection: 'row', gap: 8, paddingBottom: 14 },
   stat: { flex: 1, alignItems: 'center' },
   statNum: { fontWeight: '800', fontSize: 19, color: colors.ink },

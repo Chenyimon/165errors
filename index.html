@@ -226,6 +226,7 @@
   }
   .btn.primary{background:var(--forest); border-color:var(--forest); color:#fff;}
   .btn:active{opacity:0.8;}
+  .btn:disabled{opacity:0.45; cursor:not-allowed;}
 
   /* ---------- Empty states ---------- */
   .empty-state{
@@ -343,6 +344,64 @@
   .icon-sage{background:var(--sage);}
   .icon-compost{background:#E9DEC5;}
   .icon-neutral{background:var(--track);}
+
+  /* ---------- Recyclable badge ---------- */
+  .badge-recyclable{
+    display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase;
+    border-radius:20px; padding:4px 10px; margin-left:8px;
+  }
+  .badge-recyclable.yes{background:#DCEBD6; color:#2C6B3F;}
+  .badge-recyclable.no{background:#F5E3C9; color:#8A5A22;}
+
+  /* ---------- Prep checklist ---------- */
+  .prep-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--ink-dim); margin:16px 0 6px;}
+  .prep-list{margin:0; padding:0;}
+  .prep-item{
+    display:flex; align-items:flex-start; gap:10px; padding:7px 0;
+    font-size:13px; color:var(--ink); cursor:pointer; user-select:none;
+  }
+  .prep-check{
+    width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border);
+    flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:#fff; background:var(--surface);
+  }
+  .prep-check.checked{background:var(--forest); border-color:var(--forest);}
+  .prep-item.done{color:var(--ink-dim); text-decoration:line-through;}
+
+  /* ---------- Challenges ---------- */
+  .challenge-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:14px; margin-bottom:10px;
+  }
+  .challenge-title{font-weight:700; font-size:14px; color:var(--ink); margin-bottom:2px;}
+  .challenge-desc{font-size:12px; color:var(--ink-dim); margin-bottom:10px;}
+  .challenge-track{height:8px; background:var(--track); border-radius:5px; overflow:hidden; margin-bottom:6px;}
+  .challenge-fill{height:100%; background:var(--forest); border-radius:5px;}
+  .challenge-card.complete .challenge-fill{background:var(--sun);}
+  .challenge-progress{font-size:11px; color:var(--ink-dim); text-align:right;}
+
+  /* ---------- Sponsor challenges ---------- */
+  .sponsor-card{border-radius:var(--radius); overflow:hidden; margin-bottom:12px; border:1px solid var(--border);}
+  .sponsor-banner{padding:12px 16px; color:#fff; display:flex; align-items:center; gap:8px; font-weight:700; font-size:13px;}
+  .sponsor-body{padding:14px 16px; background:var(--surface);}
+  .sponsor-desc{font-size:12.5px; color:var(--ink-dim); margin-bottom:10px; line-height:1.5;}
+  .sponsor-reward{font-size:12px; color:var(--terracotta); font-weight:700; margin-top:8px;}
+
+  /* ---------- Group events ---------- */
+  .event-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px;}
+  .event-title{font-weight:700; font-size:14px; color:var(--ink); margin-bottom:4px;}
+  .event-meta{font-size:12px; color:var(--ink-dim); margin-bottom:2px;}
+  .event-actions{margin-top:10px; display:flex;}
+  .event-actions .btn{flex:none; padding:9px 16px; font-size:12.5px;}
+
+  /* ---------- Nearby bins ---------- */
+  .bins-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px;}
+  .bin-row{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border);}
+  .bin-row:last-child{border-bottom:none;}
+  .bin-name{font-size:13px; font-weight:600; color:var(--ink);}
+  .bin-dist{font-size:12px; color:var(--ink-dim); flex-shrink:0; margin-left:10px;}
+  .bin-link{font-size:11px; font-weight:700; color:var(--forest); text-decoration:none;}
 
   /* ---------- Tab bar ---------- */
   #tabbar{
@@ -470,14 +529,73 @@
   const APP_SECRET = "REPLACE_WITH_YOUR_OWN_SECRET"; // must match APP_SECRET set on the server
 
   const IMPACT = {
-    plastic:{co2:1.5, label:'Plastic', icon:'♳', tag:'sun'},
-    glass:{co2:0.3, label:'Glass', icon:'🍾', tag:'water'},
-    metal:{co2:4.0, label:'Metal', icon:'🥫', tag:'terracotta'},
-    paper:{co2:0.9, label:'Paper', icon:'📄', tag:'sage'},
-    compost:{co2:0.4, label:'Compost', icon:'🍂', tag:'compost'},
-    other:{co2:0.5, label:'Other', icon:'♻️', tag:'neutral'}
+    plastic:{co2:1.5, label:'Plastic', icon:'♳', tag:'sun', recyclable:true, recycleLabel:'Recyclable'},
+    glass:{co2:0.3, label:'Glass', icon:'🍾', tag:'water', recyclable:true, recycleLabel:'Recyclable'},
+    metal:{co2:4.0, label:'Metal', icon:'🥫', tag:'terracotta', recyclable:true, recycleLabel:'Recyclable'},
+    paper:{co2:0.9, label:'Paper', icon:'📄', tag:'sage', recyclable:true, recycleLabel:'Recyclable'},
+    compost:{co2:0.4, label:'Compost', icon:'🍂', tag:'compost', recyclable:true, recycleLabel:'Compostable'},
+    other:{co2:0.5, label:'Other', icon:'♻️', tag:'neutral', recyclable:false, recycleLabel:'Check locally'}
   };
   const SIZE_G = {small:15, medium:80, large:300};
+
+  const PREP_TIPS = {
+    plastic: ['Empty and rinse the container', 'Remove the cap and recycle it separately if your area requires that', 'Flatten it to save space'],
+    glass: ['Empty out any liquid', 'Give it a quick rinse', 'Remove metal or plastic lids'],
+    metal: ['Empty the can completely', 'Rinse off any food residue', 'Labels are fine to leave on'],
+    paper: ['Make sure it\'s dry', 'Remove plastic wrapping, tape, or bubble wrap', 'Flatten boxes to save space'],
+    compost: ['Remove any packaging or stickers', 'Keep liquids and oils out'],
+    other: ['Check your local recycling guidelines for this material', 'When in doubt, keep it out of the recycling bin']
+  };
+
+  const CHALLENGES = [
+    {id:'plastic20', title:'Plastic Purge', desc:'Recycle 20 plastic items', metric:'category:plastic', target:20},
+    {id:'items50', title:'Half Century', desc:'Recycle 50 items in total', metric:'totalScans', target:50},
+    {id:'streak7', title:'Week Warrior', desc:'Reach a 7-day streak', metric:'longestStreak', target:7},
+    {id:'points500', title:'Point Hoarder', desc:'Earn 500 points', metric:'totalPoints', target:500}
+  ];
+
+  const SPONSOR_CHALLENGES = [
+    {
+      id:'coke20', sponsor:'🥤 Coca-Cola Recycling Challenge', color:'#B3221E',
+      desc:'Recycle 20 bottles this month.', metric:'category:plastic', target:20,
+      reward:'Earn 500 SORT points → Get a $5 voucher'
+    },
+    {
+      id:'nus30', sponsor:'🎓 NUS × SORT/ED Sustainability Challenge', color:'#2C4736',
+      desc:'Recycle 30 items this semester as part of the campus drive.', metric:'totalScans', target:30,
+      reward:'Featured on the NUS sustainability leaderboard'
+    }
+  ];
+
+  const EVENTS = [
+    {id:'beach1', title:'East Coast Beach Cleanup', date:'Sat, 6 Sep · 9:00 AM', location:'East Coast Park, Area C', spots:40},
+    {id:'park1', title:'Bishan Park Litter Sweep', date:'Sun, 14 Sep · 8:30 AM', location:'Bishan-Ang Mo Kio Park', spots:25},
+    {id:'campus1', title:'Campus Green Day', date:'Fri, 19 Sep · 3:00 PM', location:'NUS University Town', spots:60}
+  ];
+
+  const BINS = [
+    {id:'bin1', name:'NUS UTown Recycling Point', lat:1.3055, lng:103.7734},
+    {id:'bin2', name:'East Coast Park Recycling Bin', lat:1.3010, lng:103.9120},
+    {id:'bin3', name:'Bishan Park Recycling Station', lat:1.3506, lng:103.8496},
+    {id:'bin4', name:'Orchard Road Recycling Bin', lat:1.3048, lng:103.8318},
+    {id:'bin5', name:'Jurong Lake Gardens Bin', lat:1.3399, lng:103.7269}
+  ];
+
+  function metricValue(profile, metric){
+    if(metric === 'totalScans') return profile.totalScans;
+    if(metric === 'totalPoints') return profile.totalPoints;
+    if(metric === 'longestStreak') return profile.longestStreak;
+    if(metric.startsWith('category:')) return profile.byCategory[metric.split(':')[1]] || 0;
+    return 0;
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2){
+    const R = 6371;
+    const dLat = (lat2-lat1) * Math.PI/180;
+    const dLon = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
 
   let profile = null;
   let pendingPost = null;
@@ -664,14 +782,19 @@
     }
   }
 
+  let prepChecked = [];
+
   function renderReview(pending){
     const imp = IMPACT[pending.category];
+    const tips = PREP_TIPS[pending.category] || [];
+    prepChecked = tips.map(()=>false);
     const revealEl = document.getElementById('scan-reveal');
     revealEl.innerHTML = `
       <div class="post-preview">
         <div class="post-preview-image"><img src="${pending.imageDataUrl}" alt=""></div>
         <div class="post-preview-body">
           <div class="ticket-cat tag-${imp.tag}">${imp.icon} ${imp.label}</div>
+          <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓' : '!'} ${imp.recycleLabel}</span>
           <div class="ticket-item">${escapeHtml(pending.itemName)}</div>
           <div class="ticket-stats">
             <div class="ticket-stat"><div class="num">${pending.weightG}g</div><div class="lbl">Est. weight</div></div>
@@ -679,11 +802,22 @@
             <div class="ticket-stat"><div class="num accent">+${pending.points}</div><div class="lbl">Points</div></div>
           </div>
           ${pending.funFact ? `<div class="ticket-fact"><b>Did you know:</b> ${escapeHtml(pending.funFact)}</div>` : ''}
+          ${tips.length ? `
+            <div class="prep-label">Before you toss it in</div>
+            <div class="prep-list">
+              ${tips.map((tip,i)=>`
+                <div class="prep-item" data-idx="${i}">
+                  <span class="prep-check">✓</span>
+                  <span class="prep-text">${escapeHtml(tip)}</span>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       </div>
       <div class="reveal-actions">
         <button class="btn" id="retake-btn">Retake</button>
-        <button class="btn primary" id="post-btn">Post to feed</button>
+        <button class="btn primary" id="post-btn" ${tips.length ? 'disabled' : ''}>Post to feed</button>
       </div>
     `;
     revealEl.style.display = 'block';
@@ -691,6 +825,16 @@
     document.getElementById('post-btn').addEventListener('click', ()=>{
       if(!profile.username){ promptUsernameThenPost(); return; }
       finalizePost(pendingPost);
+    });
+    revealEl.querySelectorAll('.prep-item').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const idx = Number(el.dataset.idx);
+        prepChecked[idx] = !prepChecked[idx];
+        el.classList.toggle('done', prepChecked[idx]);
+        el.querySelector('.prep-check').classList.toggle('checked', prepChecked[idx]);
+        const postBtn = document.getElementById('post-btn');
+        if(postBtn) postBtn.disabled = !prepChecked.every(Boolean);
+      });
     });
   }
 
@@ -780,7 +924,7 @@
         </div>
         ${p.imageDataUrl ? `<div class="post-image"><img src="${p.imageDataUrl}" alt=""></div>` : ''}
         <div class="post-body">
-          <div class="post-item">${escapeHtml(p.itemName)}</div>
+          <div class="post-item">${escapeHtml(p.itemName)} <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓' : '!'} ${imp.recycleLabel}</span></div>
           ${p.funFact ? `<div class="post-fact">${escapeHtml(p.funFact)}</div>` : ''}
           <div class="post-stats">
             <div class="post-stat"><span class="num">${p.weightG}g</span><span class="lbl">Weight</span></div>
@@ -792,15 +936,57 @@
     }).join('');
   }
 
+  // ---------- Group events ----------
+  let joinedEvents = [];
+  async function loadJoinedEvents(){
+    try{
+      const r = await STORAGE.get('joinedEvents', false);
+      joinedEvents = r ? JSON.parse(r.value) : [];
+    }catch(e){ joinedEvents = []; }
+  }
+  async function saveJoinedEvents(){
+    try{ await STORAGE.set('joinedEvents', JSON.stringify(joinedEvents), false); }
+    catch(e){ console.error('save joined events failed', e); }
+  }
+  function eventsSectionHtml(){
+    return `
+      <div class="section-label" style="margin-top:26px;">Upcoming events</div>
+      ${EVENTS.map(ev=>{
+        const joined = joinedEvents.includes(ev.id);
+        return `<div class="event-card">
+          <div class="event-title">${escapeHtml(ev.title)}</div>
+          <div class="event-meta">📅 ${escapeHtml(ev.date)}</div>
+          <div class="event-meta">📍 ${escapeHtml(ev.location)} · ${ev.spots} spots</div>
+          <div class="event-actions">
+            <button class="btn ${joined ? '' : 'primary'} event-join-btn" data-id="${ev.id}">${joined ? 'Joined ✓' : 'Join'}</button>
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+  }
+  function bindEventButtons(){
+    document.querySelectorAll('.event-join-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        const id = btn.dataset.id;
+        if(joinedEvents.includes(id)) joinedEvents = joinedEvents.filter(x=>x!==id);
+        else joinedEvents.push(id);
+        await saveJoinedEvents();
+        renderBoard();
+      });
+    });
+  }
+
   // ---------- Leaderboard ----------
   async function renderBoard(){
     const el = document.getElementById('board-content');
+    await loadJoinedEvents();
+
     if(!profile.username){
       el.innerHTML = `<div class="name-setup">
         <p>Pick a name to join the leaderboard. Everyone using this app link will see it.</p>
         <input id="username-input" placeholder="Your name" maxlength="24">
         <button class="btn primary" id="username-save" style="width:100%">Join leaderboard</button>
-      </div>`;
+      </div>` + eventsSectionHtml();
       document.getElementById('username-save').addEventListener('click', async ()=>{
         const val = document.getElementById('username-input').value.trim();
         if(!val) return;
@@ -810,21 +996,22 @@
         renderBoard();
         renderProfile();
       });
+      bindEventButtons();
       return;
     }
     el.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
     const entries = await loadLeaderboard();
-    if(entries.length === 0){
-      el.innerHTML = `<div class="empty-state"><div class="big">🏆</div><p>You're the first one here.<br>Scan something to take the top spot.</p></div>`;
-      return;
-    }
-    el.innerHTML = entries.map((e,i)=>`
-      <div class="lb-row ${e.username===profile.username?'me':''}">
-        <div class="lb-rank">${i+1}</div>
-        <div class="lb-name">${escapeHtml(e.username)}${e.username===profile.username?' (you)':''}</div>
-        <div class="lb-pts">${e.points}</div>
-      </div>
-    `).join('');
+    const leaderboardHtml = entries.length === 0
+      ? `<div class="empty-state"><div class="big">🏆</div><p>You're the first one here.<br>Scan something to take the top spot.</p></div>`
+      : entries.map((e,i)=>`
+        <div class="lb-row ${e.username===profile.username?'me':''}">
+          <div class="lb-rank">${i+1}</div>
+          <div class="lb-name">${escapeHtml(e.username)}${e.username===profile.username?' (you)':''}</div>
+          <div class="lb-pts">${e.points}</div>
+        </div>
+      `).join('');
+    el.innerHTML = leaderboardHtml + eventsSectionHtml();
+    bindEventButtons();
   }
 
   // ---------- Profile ----------
@@ -846,6 +1033,78 @@
     const steps = [100,500,1000,2000,5000,10000];
     const found = steps.find(m=>m>points);
     return found || (Math.ceil((points+500)/500)*500);
+  }
+
+  function challengesHtml(){
+    return `
+      <div class="section-label">Challenges</div>
+      ${CHALLENGES.map(c=>{
+        const val = metricValue(profile, c.metric);
+        const pct = Math.min(100, Math.round((val/c.target)*100));
+        const complete = val >= c.target;
+        return `<div class="challenge-card ${complete ? 'complete' : ''}">
+          <div class="challenge-title">${escapeHtml(c.title)}${complete ? ' ✓' : ''}</div>
+          <div class="challenge-desc">${escapeHtml(c.desc)}</div>
+          <div class="challenge-track"><div class="challenge-fill" style="width:${pct}%"></div></div>
+          <div class="challenge-progress">${Math.min(val,c.target)} / ${c.target}</div>
+        </div>`;
+      }).join('')}
+
+      <div class="section-label">Sponsored challenges</div>
+      ${SPONSOR_CHALLENGES.map(s=>{
+        const val = metricValue(profile, s.metric);
+        const pct = Math.min(100, Math.round((val/s.target)*100));
+        return `<div class="sponsor-card">
+          <div class="sponsor-banner" style="background:${s.color}">${s.sponsor}</div>
+          <div class="sponsor-body">
+            <div class="sponsor-desc">${escapeHtml(s.desc)}</div>
+            <div class="challenge-track"><div class="challenge-fill" style="width:${pct}%"></div></div>
+            <div class="challenge-progress">${Math.min(val,s.target)} / ${s.target}</div>
+            <div class="sponsor-reward">🎁 ${escapeHtml(s.reward)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    `;
+  }
+
+  function binsCardInnerHtml(sortedBins){
+    if(!sortedBins){
+      return `
+        <p style="color:var(--ink-dim); font-size:13px; margin-bottom:12px;">Find the closest drop-off points using your current location.</p>
+        <button class="btn primary" id="find-bins-btn" style="width:100%">Use my location</button>
+      `;
+    }
+    return sortedBins.map(b=>`
+      <div class="bin-row">
+        <div class="bin-name">${escapeHtml(b.name)}</div>
+        <div class="bin-dist">${b.dist.toFixed(1)} km · <a class="bin-link" href="https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}" target="_blank" rel="noopener">Directions</a></div>
+      </div>
+    `).join('');
+  }
+
+  function bindFindBinsButton(){
+    const btn = document.getElementById('find-bins-btn');
+    if(!btn) return;
+    btn.addEventListener('click', ()=>{
+      if(!navigator.geolocation){ showToast('Location is not available on this device'); return; }
+      btn.disabled = true;
+      btn.textContent = 'Locating…';
+      navigator.geolocation.getCurrentPosition(
+        (pos)=>{
+          const {latitude, longitude} = pos.coords;
+          const sorted = BINS
+            .map(b=>({...b, dist: haversineKm(latitude, longitude, b.lat, b.lng)}))
+            .sort((a,b)=>a.dist-b.dist)
+            .slice(0,5);
+          document.getElementById('bins-card').innerHTML = binsCardInnerHtml(sorted);
+        },
+        ()=>{
+          showToast("Couldn't get your location — check permissions");
+          btn.disabled = false;
+          btn.textContent = 'Use my location';
+        }
+      );
+    });
   }
 
   function renderProfile(){
@@ -892,6 +1151,8 @@
       </div>
       <div class="goal-track"><div class="goal-fill" style="width:${goalPct}%"></div></div>
 
+      ${challengesHtml()}
+
       <div class="section-label">By material</div>
       ${cats.length ? cats.map(([cat,count])=>{
         const imp = IMPACT[cat];
@@ -913,7 +1174,11 @@
           </div>
         </div>
       `).join('') : `<p style="color:var(--ink-dim); font-size:13px;">Scan items to unlock milestones.</p>`}
+
+      <div class="section-label">Nearby recycling bins</div>
+      <div class="bins-card" id="bins-card">${binsCardInnerHtml(null)}</div>
     `;
+    bindFindBinsButton();
   }
 
   // ---------- Tabs ----------

@@ -1,10 +1,12 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
 import { colors, radius } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
 import { getLeaderboard } from '../lib/api';
+import { EVENTS } from '../lib/content';
+import { getJoinedEvents, setJoinedEvents } from '../lib/eventsStore';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 
@@ -13,8 +15,11 @@ export default function BoardScreen() {
   const [name, setName] = useState('');
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [joined, setJoined] = useState([]);
 
   const load = useCallback(async () => {
+    const joinedIds = await getJoinedEvents();
+    setJoined(joinedIds);
     if (!profile.username) return;
     setLoading(true);
     try {
@@ -39,10 +44,16 @@ export default function BoardScreen() {
     load();
   };
 
+  const toggleEvent = async (id) => {
+    const next = joined.includes(id) ? joined.filter((x) => x !== id) : [...joined, id];
+    setJoined(next);
+    await setJoinedEvents(next);
+  };
+
   return (
     <View style={styles.screen}>
       <AppHeader />
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Leaderboard</Text>
 
         {!profile.username ? (
@@ -68,29 +79,45 @@ export default function BoardScreen() {
             <Text style={styles.emptyText}>You're the first one here.{'\n'}Scan something to take the top spot.</Text>
           </View>
         ) : (
-          <FlatList
-            data={entries}
-            keyExtractor={(e) => e.username}
-            renderItem={({ item, index }) => (
-              <View style={[styles.row, item.username === profile.username && styles.rowMe]}>
-                <Text style={styles.rank}>{index + 1}</Text>
-                <Text style={styles.name}>
-                  {item.username}
-                  {item.username === profile.username ? ' (you)' : ''}
-                </Text>
-                <Text style={styles.pts}>{item.points}</Text>
-              </View>
-            )}
-          />
+          entries.map((item, index) => (
+            <View key={item.username} style={[styles.row, item.username === profile.username && styles.rowMe]}>
+              <Text style={styles.rank}>{index + 1}</Text>
+              <Text style={styles.name}>
+                {item.username}
+                {item.username === profile.username ? ' (you)' : ''}
+              </Text>
+              <Text style={styles.pts}>{item.points}</Text>
+            </View>
+          ))
         )}
-      </View>
+
+        <Text style={[styles.title, { marginTop: 26 }]}>Upcoming events</Text>
+        {EVENTS.map((ev) => {
+          const isJoined = joined.includes(ev.id);
+          return (
+            <View key={ev.id} style={styles.eventCard}>
+              <Text style={styles.eventTitle}>{ev.title}</Text>
+              <Text style={styles.eventMeta}>📅 {ev.date}</Text>
+              <Text style={styles.eventMeta}>
+                📍 {ev.location} · {ev.spots} spots
+              </Text>
+              <Button
+                title={isJoined ? 'Joined ✓' : 'Join'}
+                variant={isJoined ? 'outline' : 'primary'}
+                onPress={() => toggleEvent(ev.id)}
+                style={{ marginTop: 10, alignSelf: 'flex-start' }}
+              />
+            </View>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface },
-  content: { flex: 1, padding: 18 },
+  content: { padding: 18, paddingBottom: 40 },
   title: {
     fontSize: 12,
     fontWeight: '700',
@@ -137,4 +164,14 @@ const styles = StyleSheet.create({
   rank: { fontWeight: '800', fontSize: 13, color: colors.inkDim, width: 22 },
   name: { flex: 1, fontWeight: '700', fontSize: 14, color: colors.ink },
   pts: { fontWeight: '800', color: colors.terracotta, fontSize: 14 },
+  eventCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: 14,
+    marginBottom: 10,
+  },
+  eventTitle: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 4 },
+  eventMeta: { fontSize: 12, color: colors.inkDim, marginBottom: 2 },
 });

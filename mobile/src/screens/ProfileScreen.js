@@ -1,14 +1,20 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
+import * as Location from 'expo-location';
 
 import { colors, radius } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
 import { IMPACT } from '../lib/impact';
 import { computeBadges, nextMilestone } from '../lib/profileStore';
+import { CHALLENGES, SPONSOR_CHALLENGES, BINS, metricValue, haversineKm } from '../lib/content';
+import { showToast } from '../lib/toast';
 import AppHeader from '../components/AppHeader';
+import Button from '../components/Button';
 
 export default function ProfileScreen() {
   const { profile } = useProfile();
+  const [binResults, setBinResults] = useState(null);
+  const [locating, setLocating] = useState(false);
 
   const badges = useMemo(() => computeBadges(profile), [profile]);
   const cats = useMemo(
@@ -19,6 +25,27 @@ export default function ProfileScreen() {
   const ringPct = Math.min(100, Math.round((Math.min(profile.currentStreak, 7) / 7) * 100));
   const goal = nextMilestone(profile.totalPoints);
   const goalPct = Math.min(100, Math.round((profile.totalPoints / goal) * 100));
+
+  async function findBins() {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        showToast('Location permission is needed to find nearby bins');
+        setLocating(false);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({});
+      const sorted = BINS
+        .map((b) => ({ ...b, dist: haversineKm(pos.coords.latitude, pos.coords.longitude, b.lat, b.lng) }))
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, 5);
+      setBinResults(sorted);
+    } catch (e) {
+      showToast("Couldn't get your location");
+    }
+    setLocating(false);
+  }
 
   return (
     <View style={styles.screen}>
@@ -80,6 +107,51 @@ export default function ProfileScreen() {
           <View style={[styles.goalFill, { width: `${goalPct}%` }]} />
         </View>
 
+        <Text style={styles.sectionLabel}>Challenges</Text>
+        {CHALLENGES.map((c) => {
+          const val = metricValue(profile, c.metric);
+          const pct = Math.min(100, Math.round((val / c.target) * 100));
+          const complete = val >= c.target;
+          return (
+            <View key={c.id} style={styles.challengeCard}>
+              <Text style={styles.challengeTitle}>
+                {c.title}
+                {complete ? ' ✓' : ''}
+              </Text>
+              <Text style={styles.challengeDesc}>{c.desc}</Text>
+              <View style={styles.challengeTrack}>
+                <View style={[styles.challengeFill, { width: `${pct}%` }, complete && styles.challengeFillComplete]} />
+              </View>
+              <Text style={styles.challengeProgress}>
+                {Math.min(val, c.target)} / {c.target}
+              </Text>
+            </View>
+          );
+        })}
+
+        <Text style={styles.sectionLabel}>Sponsored challenges</Text>
+        {SPONSOR_CHALLENGES.map((s) => {
+          const val = metricValue(profile, s.metric);
+          const pct = Math.min(100, Math.round((val / s.target) * 100));
+          return (
+            <View key={s.id} style={styles.sponsorCard}>
+              <View style={[styles.sponsorBanner, { backgroundColor: s.color }]}>
+                <Text style={styles.sponsorBannerText}>{s.sponsor}</Text>
+              </View>
+              <View style={styles.sponsorBody}>
+                <Text style={styles.sponsorDesc}>{s.desc}</Text>
+                <View style={styles.challengeTrack}>
+                  <View style={[styles.challengeFill, { width: `${pct}%` }]} />
+                </View>
+                <Text style={styles.challengeProgress}>
+                  {Math.min(val, s.target)} / {s.target}
+                </Text>
+                <Text style={styles.sponsorReward}>🎁 {s.reward}</Text>
+              </View>
+            </View>
+          );
+        })}
+
         <Text style={styles.sectionLabel}>By material</Text>
         {cats.length ? (
           cats.map(([cat, count]) => {
@@ -117,6 +189,35 @@ export default function ProfileScreen() {
         ) : (
           <Text style={styles.mutedText}>Scan items to unlock milestones.</Text>
         )}
+
+        <Text style={styles.sectionLabel}>Nearby recycling bins</Text>
+        <View style={styles.binsCard}>
+          {binResults ? (
+            binResults.map((b, i) => (
+              <View key={b.id} style={[styles.binRow, i === binResults.length - 1 && { borderBottomWidth: 0 }]}>
+                <Text style={styles.binName}>{b.name}</Text>
+                <Pressable
+                  onPress={() =>
+                    Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}`)
+                  }
+                >
+                  <Text style={styles.binDist}>{b.dist.toFixed(1)} km · Directions</Text>
+                </Pressable>
+              </View>
+            ))
+          ) : (
+            <>
+              <Text style={styles.mutedText}>Find the closest drop-off points using your current location.</Text>
+              <Button
+                title={locating ? 'Locating…' : 'Use my location'}
+                variant="primary"
+                onPress={findBins}
+                disabled={locating}
+                style={{ width: '100%', marginTop: 12 }}
+              />
+            </>
+          )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -200,4 +301,47 @@ const styles = StyleSheet.create({
   },
   milestoneTitle: { fontWeight: '700', fontSize: 14, color: colors.ink },
   milestoneSub: { fontSize: 12, color: colors.inkDim, marginTop: 1 },
+  challengeCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: 14,
+    marginBottom: 10,
+  },
+  challengeTitle: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 2 },
+  challengeDesc: { fontSize: 12, color: colors.inkDim, marginBottom: 10 },
+  challengeTrack: { height: 8, backgroundColor: colors.track, borderRadius: 5, overflow: 'hidden', marginBottom: 6 },
+  challengeFill: { height: '100%', backgroundColor: colors.forest, borderRadius: 5 },
+  challengeFillComplete: { backgroundColor: colors.sun },
+  challengeProgress: { fontSize: 11, color: colors.inkDim, textAlign: 'right' },
+  sponsorCard: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sponsorBanner: { paddingHorizontal: 16, paddingVertical: 12 },
+  sponsorBannerText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  sponsorBody: { padding: 16, backgroundColor: colors.surface },
+  sponsorDesc: { fontSize: 12.5, color: colors.inkDim, marginBottom: 10, lineHeight: 18 },
+  sponsorReward: { fontSize: 12, color: colors.terracotta, fontWeight: '700', marginTop: 8 },
+  binsCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: 16,
+  },
+  binRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  binName: { fontSize: 13, fontWeight: '600', color: colors.ink, flex: 1, marginRight: 10 },
+  binDist: { fontSize: 12, color: colors.forest, fontWeight: '700' },
 });
