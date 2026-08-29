@@ -80,6 +80,13 @@ export async function getLeaderboard(scope) {
   return res.json();
 }
 
+export async function getMedals(guestTag) {
+  const qs = !authToken && guestTag ? `?guest_tag=${encodeURIComponent(guestTag)}` : '';
+  const res = await fetch(`${API_BASE}/api/medals${qs}`, { headers: requestHeaders() });
+  if (!res.ok) throw new Error('medals fetch failed: ' + res.status);
+  return res.json();
+}
+
 export async function getFriends() {
   const res = await fetch(`${API_BASE}/api/friends`, { headers: authHeaders() });
   if (!res.ok) throw new Error('friends fetch failed: ' + res.status);

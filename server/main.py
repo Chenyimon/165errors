@@ -317,19 +317,23 @@ async def upload_avatar(
 
 
 # ---------- Leaderboard ----------
+# The board resets every calendar month — both queries below only sum a post's
+# points if it happened in the current month, so scores naturally zero out on
+# the 1st. Past months' standings are recoverable (see /api/medals) since
+# they're derived from ts, not from a mutable running total.
+CURRENT_MONTH_FILTER = "strftime('%Y-%m', ts/1000, 'unixepoch') = strftime('%Y-%m', 'now')"
+
+
 @app.get("/api/leaderboard")
 def leaderboard():
-    # Built from posts (not profiles) so guests — who have no profiles row —
-    # show up here too. A guest's points are the sum of what their posts earned;
-    # for real accounts this always equals profiles.total_points, since that's
-    # the only thing that ever increments it.
     with get_conn() as conn:
         rows = conn.execute(
-            """
+            f"""
             SELECT p.username AS username, SUM(p.points) AS points, MAX(p.is_guest) AS is_guest,
                    pr.avatar_path AS avatar_path
             FROM posts p
             LEFT JOIN profiles pr ON pr.username = p.username
+            WHERE {CURRENT_MONTH_FILTER}
             GROUP BY p.username
             ORDER BY points DESC
             LIMIT 100
@@ -350,17 +354,54 @@ def leaderboard():
 def friends_leaderboard(username: str = Depends(get_current_username)):
     with get_conn() as conn:
         rows = conn.execute(
-            """
-            SELECT p.username AS username, p.total_points AS total_points
-            FROM profiles p
-            WHERE p.username = ? OR p.username IN (
+            f"""
+            WITH monthly AS (
+                SELECT username, SUM(points) AS points
+                FROM posts
+                WHERE {CURRENT_MONTH_FILTER}
+                GROUP BY username
+            )
+            SELECT m.username AS username, m.points AS points
+            FROM monthly m
+            WHERE m.username = ? OR m.username IN (
                 SELECT friend_username FROM friends WHERE username = ?
             )
-            ORDER BY p.total_points DESC
+            ORDER BY m.points DESC
             """,
             (username, username),
         ).fetchall()
-    return [{"username": r["username"], "points": r["total_points"]} for r in rows]
+    return [{"username": r["username"], "points": r["points"]} for r in rows]
+
+
+@app.get("/api/medals")
+def my_medals(guest_tag: Optional[str] = None, username: Optional[str] = Depends(get_optional_username)):
+    """Every past (already-finished) calendar month where this identity placed
+    top 3, derived on the fly from posts — there's no separate table to keep in
+    sync, so this is always consistent with the leaderboard above."""
+    identity = username or guest_display_name(guest_tag)
+    if not identity:
+        return []
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            WITH monthly AS (
+                SELECT strftime('%Y-%m', ts/1000, 'unixepoch') AS month, username, SUM(points) AS points
+                FROM posts
+                GROUP BY month, username
+            ),
+            ranked AS (
+                SELECT month, username, points,
+                       RANK() OVER (PARTITION BY month ORDER BY points DESC) AS rnk
+                FROM monthly
+            )
+            SELECT month, points, rnk
+            FROM ranked
+            WHERE username = ? AND rnk <= 3 AND month < strftime('%Y-%m', 'now')
+            ORDER BY month DESC
+            """,
+            (identity,),
+        ).fetchall()
+    return [{"month": r["month"], "points": r["points"], "rank": r["rnk"]} for r in rows]
 
 
 # ---------- Friends ----------

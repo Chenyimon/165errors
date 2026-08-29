@@ -57,6 +57,7 @@ export default function BoardScreen() {
       <AppHeader />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Leaderboard</Text>
+        <Text style={styles.subtitle}>Resets every month · Top 3 win a medal</Text>
 
         <View style={styles.toggleRow}>
           <Pressable
@@ -148,6 +149,7 @@ const styles = StyleSheet.create({
     color: colors.inkDim,
     marginBottom: 18,
   },
+  subtitle: { fontSize: 12.5, color: colors.inkDim, marginTop: -12, marginBottom: 16 },
   toggleRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   toggleBtn: {
     flex: 1,
