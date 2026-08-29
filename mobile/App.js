@@ -9,8 +9,10 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors } from './src/theme';
 import { ProfileProvider, useProfile } from './src/lib/ProfileContext';
 import { FriendsModalProvider } from './src/lib/FriendsModalContext';
+import { AppMenuProvider } from './src/lib/AppMenuContext';
 import ToastHost from './src/components/ToastHost';
 import FriendsModal from './src/components/FriendsModal';
+import AppMenu from './src/components/AppMenu';
 import AuthScreen from './src/screens/AuthScreen';
 import Emoji from './src/components/Emoji';
 
@@ -90,12 +92,15 @@ export default function App() {
     <SafeAreaProvider>
       <ProfileProvider>
         <FriendsModalProvider>
+          <AppMenuProvider>
           <View style={{ flex: 1 }}>
             <StatusBar style="dark" />
             <Root />
             <FriendsModal />
+            <AppMenu />
             <ToastHost />
           </View>
+          </AppMenuProvider>
         </FriendsModalProvider>
       </ProfileProvider>
     </SafeAreaProvider>

@@ -1,7 +1,8 @@
 """Clear demo data from the SORT/ED database.
 
-    python reset_demo.py posts     - wipe posts, likes, comments; keep accounts
-    python reset_demo.py all       - wipe everything, including accounts
+    python reset_demo.py posts             - wipe everyone's posts, likes, comments
+    python reset_demo.py posts --user NAME - wipe only that person's posts
+    python reset_demo.py all               - wipe everything, including accounts
 
 Always writes a timestamped backup of app.db next to it first, so a mistake
 is recoverable: copy the .bak file back over app.db.
@@ -19,11 +20,51 @@ DB = Path(os.environ.get("DB_PATH", HERE / "app.db"))
 UPLOADS = Path(os.environ.get("UPLOAD_DIR", HERE / "uploads"))
 
 
+def clear_one_user(conn, who: str) -> None:
+    """Remove a single person's posts and reset their profile counters.
+
+    The blunt `posts` mode wipes the whole feed, which is easy to run by
+    accident when you only meant to tidy up your own testing.
+    """
+    rows = conn.execute(
+        "SELECT id, image_path FROM posts WHERE username = ?", (who,)
+    ).fetchall()
+    if not rows:
+        print(f"  no posts found for {who!r}")
+
+    for post_id, image_path in rows:
+        conn.execute("DELETE FROM likes WHERE post_id = ?", (post_id,))
+        conn.execute("DELETE FROM comments WHERE post_id = ?", (post_id,))
+        if image_path:
+            (UPLOADS / image_path).unlink(missing_ok=True)
+    conn.execute("DELETE FROM posts WHERE username = ?", (who,))
+    print(f"  cleared {len(rows)} post(s) by {who}")
+
+    conn.execute("""
+        UPDATE profiles SET total_points = 0, total_scans = 0,
+                            current_streak = 0, longest_streak = 0,
+                            last_scan_date = NULL, by_category = '{}'
+        WHERE username = ?
+    """, (who,))
+    print(f"  reset {who}'s points and streaks")
+
+
 def main() -> None:
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
     if mode not in ("posts", "all"):
         print(__doc__)
         sys.exit(1)
+
+    who = None
+    if "--user" in sys.argv:
+        i = sys.argv.index("--user")
+        if i + 1 >= len(sys.argv):
+            print("--user needs a username")
+            sys.exit(1)
+        who = sys.argv[i + 1]
+        if mode != "posts":
+            print("--user only applies to `posts`")
+            sys.exit(1)
 
     if not DB.exists():
         print(f"No database at {DB} - nothing to clear.")
@@ -34,6 +75,14 @@ def main() -> None:
     print(f"Backed up to {backup.name}")
 
     conn = sqlite3.connect(DB)
+
+    if who is not None:
+        clear_one_user(conn, who)
+        conn.commit()
+        conn.close()
+        print("\nDone. Restart the server so it picks up the change.")
+        return
+
     tables = ["comments", "likes", "posts"]
     if mode == "all":
         tables += ["friends", "sessions", "profiles", "users"]

@@ -5,7 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { colors, radius } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
-import { imageSource, getMedals } from '../lib/api';
+import { imageSource } from '../lib/api';
 import { prepareAvatarForUpload } from '../lib/imagePrep';
 import { IMPACT } from '../lib/impact';
 import { computeBadges, nextMilestone, edMessage } from '../lib/profileStore';
@@ -14,10 +14,8 @@ import { showToast } from '../lib/toast';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 import Emoji from '../components/Emoji';
-import MyPostsModal from '../components/MyPostsModal';
+import { useAppMenu } from '../lib/AppMenuContext';
 
-const MEDAL_EMOJI = { 1: '🥇', 2: '🥈', 3: '🥉' };
-const MEDAL_COLOR = { 1: '#D4A017', 2: '#9AA5B1', 3: '#B8722D' };
 
 function monthLabel(ym) {
   const [y, m] = ym.split('-').map(Number);
@@ -43,30 +41,7 @@ export default function ProfileScreen() {
   const [binResults, setBinResults] = useState(null);
   const [locating, setLocating] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [medalsVisible, setMedalsVisible] = useState(false);
-  const [medals, setMedals] = useState([]);
-  const [medalsLoading, setMedalsLoading] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [myPostsVisible, setMyPostsVisible] = useState(false);
-
-  useEffect(() => {
-    if (!medalsVisible) return;
-    let cancelled = false;
-    setMedalsLoading(true);
-    getMedals(guestTag)
-      .then((data) => {
-        if (!cancelled) setMedals(data);
-      })
-      .catch(() => {
-        if (!cancelled) setMedals([]);
-      })
-      .finally(() => {
-        if (!cancelled) setMedalsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [medalsVisible, guestTag]);
+  const { openMedals } = useAppMenu();
 
   async function pickAvatar() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -124,18 +99,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader
-        rightAction={
-          <Pressable
-            style={styles.menuBtn}
-            onPress={() => setMenuVisible(true)}
-            accessibilityLabel="More"
-            hitSlop={6}
-          >
-            <Text style={styles.menuDots}>⋯</Text>
-          </Pressable>
-        }
-      />
+      <AppHeader />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Your impact</Text>
         <View style={styles.heroBlock}>
@@ -176,7 +140,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.pointsHero}>
-          <Pressable style={styles.pointsHeroMedalBtn} onPress={() => setMedalsVisible(true)}>
+          <Pressable style={styles.pointsHeroMedalBtn} onPress={openMedals}>
             <Emoji symbol="🏅" size={16} />
           </Pressable>
           <Text style={styles.pointsHeroLabel}>Total points</Text>
@@ -330,70 +294,6 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={menuVisible} animationType="fade" transparent onRequestClose={() => setMenuVisible(false)}>
-        <Pressable style={styles.menuBackdrop} onPress={() => setMenuVisible(false)}>
-          <View style={styles.menuSheet}>
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => { setMenuVisible(false); setMyPostsVisible(true); }}
-            >
-              <Emoji symbol="📸" size={17} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.menuItemText}>Your posts</Text>
-                <Text style={styles.menuItemSub}>Newest first — edit captions or delete</Text>
-              </View>
-            </Pressable>
-            <View style={styles.menuDivider} />
-            <Pressable
-              style={styles.menuItem}
-              onPress={() => { setMenuVisible(false); setMedalsVisible(true); }}
-            >
-              <Emoji symbol="🏅" size={17} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.menuItemText}>Medals</Text>
-                <Text style={styles.menuItemSub}>Every medal you have earned</Text>
-              </View>
-            </Pressable>
-          </View>
-        </Pressable>
-      </Modal>
-
-      <MyPostsModal visible={myPostsVisible} onClose={() => setMyPostsVisible(false)} />
-
-      <Modal visible={medalsVisible} animationType="slide" transparent onRequestClose={() => setMedalsVisible(false)}>
-        <View style={styles.overlay}>
-          <View style={styles.sheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Medals</Text>
-              <Pressable style={styles.closeBtn} onPress={() => setMedalsVisible(false)}>
-                <Text style={styles.closeText}>✕</Text>
-              </Pressable>
-            </View>
-            {medalsLoading ? (
-              <ActivityIndicator color={colors.forest} style={{ marginVertical: 30 }} />
-            ) : medals.length === 0 ? (
-              <View style={styles.empty}>
-                <Emoji symbol="🏅" size={34} style={styles.emptyBig} />
-                <Text style={styles.emptyText}>No medals yet.{'\n'}Finish top 3 in a month to earn one.</Text>
-              </View>
-            ) : (
-              medals.map((m) => (
-                <View key={m.month} style={styles.milestoneRow}>
-                  <View style={[styles.milestoneBadge, { backgroundColor: MEDAL_COLOR[m.rank] }]}>
-                    <Emoji symbol={MEDAL_EMOJI[m.rank]} size={18} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.milestoneTitle}>{monthLabel(m.month)}</Text>
-                    <Text style={styles.milestoneSub}>
-                      #{m.rank} place · {m.points} points
-                    </Text>
-                  </View>
-                </View>
-              ))
-            )}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
