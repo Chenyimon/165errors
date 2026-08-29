@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, Image, ActivityIndicator, StyleSheet, Pressable, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  ActivityIndicator,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
+  Platform,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 
@@ -200,7 +213,17 @@ export default function ScanScreen() {
   return (
     <View style={styles.screen}>
       <AppHeader />
-      <View style={styles.content}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Text style={styles.title}>New post</Text>
 
         {stage === 'idle' && (
@@ -319,7 +342,9 @@ export default function ScanScreen() {
             )}
           </View>
         )}
-      </View>
+      </ScrollView>
+      </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
       <Confetti trigger={celebrate} />
     </View>
   );
@@ -327,7 +352,7 @@ export default function ScanScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.surface },
-  content: { flex: 1, padding: 18 },
+  content: { flexGrow: 1, padding: 18 },
   title: {
     fontSize: 12,
     fontWeight: '700',
