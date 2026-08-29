@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -78,17 +78,7 @@ export default function ScanScreen() {
   const [unclearUri, setUnclearUri] = useState(null);
   const [captionText, setCaptionText] = useState('');
   const [celebrate, setCelebrate] = useState(0);
-  const scrollRef = useRef(null);
-
-  useEffect(() => {
-    // Fires once the keyboard has actually finished animating in, which is
-    // far more reliable than guessing a timeout — a fixed delay can fire
-    // before the keyboard (and the resulting layout shift) is done.
-    const sub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
-      scrollRef.current?.scrollToEnd({ animated: true });
-    });
-    return () => sub.remove();
-  }, []);
+  const [captionFocused, setCaptionFocused] = useState(false);
 
   async function startScan() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -152,6 +142,7 @@ export default function ScanScreen() {
     setCheckedTips([]);
     setUnclearUri(null);
     setCaptionText('');
+    setCaptionFocused(false);
     setStage('idle');
   }
 
@@ -236,7 +227,6 @@ export default function ScanScreen() {
       >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <ScrollView
-        ref={scrollRef}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -254,9 +244,9 @@ export default function ScanScreen() {
             </Text>
             <View style={styles.heroFactWrap}>
               <FactCard
-                icon="⚖️"
+                icon="⚡"
                 label="How points work"
-                fact="We score how harmful an item is if it's binned instead of recycled (batteries and e-waste score highest) plus how much energy recycling it actually saves."
+                fact="Riskier to bin = bigger reward! We score how much harm you dodge by recycling instead of tossing — batteries and e-waste are the ultimate jackpot. 🎉"
               />
             </View>
           </View>
@@ -332,15 +322,14 @@ export default function ScanScreen() {
                 )}
 
                 <Text style={styles.prepLabel}>Add a caption</Text>
-                <TextInput
-                  style={styles.captionInput}
-                  value={captionText}
-                  onChangeText={setCaptionText}
-                  placeholder={pending.aiFunFact || 'Say something about this...'}
-                  placeholderTextColor={colors.inkDim}
-                  multiline
-                  maxLength={280}
-                />
+                <Pressable style={styles.captionPreview} onPress={() => setCaptionFocused(true)}>
+                  <Text
+                    style={captionText ? styles.captionPreviewText : styles.captionPreviewPlaceholder}
+                    numberOfLines={2}
+                  >
+                    {captionText || pending.aiFunFact || 'Say something about this...'}
+                  </Text>
+                </Pressable>
               </View>
             </View>
 
@@ -366,6 +355,34 @@ export default function ScanScreen() {
       </ScrollView>
       </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {captionFocused && pending && (
+        <View style={styles.captionOverlay}>
+          <View style={styles.captionOverlayHeader}>
+            <Text style={styles.captionOverlayTitle}>Add a caption</Text>
+            <Pressable
+              onPress={() => {
+                setCaptionFocused(false);
+                Keyboard.dismiss();
+              }}
+            >
+              <Text style={styles.captionOverlayDone}>Done</Text>
+            </Pressable>
+          </View>
+          <TextInput
+            autoFocus
+            style={styles.captionOverlayInput}
+            value={captionText}
+            onChangeText={setCaptionText}
+            placeholder={pending.aiFunFact || 'Say something about this...'}
+            placeholderTextColor={colors.inkDim}
+            multiline
+            maxLength={280}
+            onBlur={() => setCaptionFocused(false)}
+          />
+        </View>
+      )}
+
       <Confetti trigger={celebrate} />
     </View>
   );
@@ -439,16 +456,55 @@ const styles = StyleSheet.create({
   statLbl: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.inkDim, marginTop: 2 },
   fact: { backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: radius.sm },
   factText: { fontSize: 12.5, color: colors.inkDim, lineHeight: 18 },
-  captionInput: {
+  captionPreview: {
     minHeight: 64,
     padding: 12,
     borderRadius: radius.sm,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surfaceAlt,
+    justifyContent: 'center',
+  },
+  captionPreviewText: { color: colors.ink, fontSize: 13.5, lineHeight: 18 },
+  captionPreviewPlaceholder: { color: colors.inkDim, fontSize: 13.5, lineHeight: 18 },
+  // Pinned to the very top of the screen (outside the ScrollView) so typing
+  // a caption is never blocked by the keyboard, regardless of device height.
+  captionOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 18,
+    paddingTop: Platform.OS === 'ios' ? 54 : 30,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
+    zIndex: 100,
+  },
+  captionOverlayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  captionOverlayTitle: { fontWeight: '700', fontSize: 15, color: colors.ink },
+  captionOverlayDone: { fontWeight: '700', fontSize: 14, color: colors.forest },
+  captionOverlayInput: {
+    minHeight: 100,
+    padding: 12,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.forest,
+    backgroundColor: colors.surfaceAlt,
     color: colors.ink,
-    fontSize: 13.5,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 19,
     textAlignVertical: 'top',
   },
   actions: { flexDirection: 'row', gap: 10, marginTop: 18 },
