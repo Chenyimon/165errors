@@ -1,1 +1,2 @@
+print("cock")
 print("penis")
