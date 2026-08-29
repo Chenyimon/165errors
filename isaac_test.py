@@ -1,1 +1,1 @@
-LAZY = isaac
+LAZY = "isaac"
