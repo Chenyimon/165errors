@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, Image, Pressable, Alert, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, Alert, StyleSheet, TextInput } from 'react-native';
 
 import { colors, radius } from '../theme';
 import { IMPACT } from '../lib/impact';
 import { timeAgo } from '../lib/format';
-import { imageSource, toggleLike, deletePost } from '../lib/api';
+import { imageSource, toggleLike, deletePost, updatePost } from '../lib/api';
 import { useProfile } from '../lib/ProfileContext';
 import Tag from './Tag';
 import RecycleBadge from './RecycleBadge';
@@ -18,6 +18,10 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [likeBusy, setLikeBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [caption, setCaption] = useState(post.funFact || '');
+  const [draft, setDraft] = useState(post.funFact || '');
+  const [saving, setSaving] = useState(false);
 
   const myDisplayName = profile.username || (guestTag ? `Guest ${guestTag}` : null);
   const isMine = !!myDisplayName && post.username === myDisplayName;
@@ -33,6 +37,18 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
       // keep previous state on failure
     }
     setLikeBusy(false);
+  }
+
+  async function saveCaption() {
+    setSaving(true);
+    try {
+      await updatePost(post.id, draft, guestTag);
+      setCaption(draft.trim());
+      setEditing(false);
+    } catch (e) {
+      Alert.alert("Couldn't save", 'Please try again.');
+    }
+    setSaving(false);
   }
 
   function confirmDelete() {
@@ -79,9 +95,19 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
           </View>
           <Tag tag={imp.tag} icon={imp.icon} label={imp.label} />
           {isMine ? (
-            <Pressable style={styles.deleteBtn} onPress={confirmDelete} disabled={deleting}>
-              <Emoji symbol="🗑️" size={14} />
-            </Pressable>
+            <>
+              <Pressable
+                style={styles.deleteBtn}
+                onPress={() => { setDraft(caption); setEditing(true); }}
+                disabled={deleting}
+                accessibilityLabel="Edit caption"
+              >
+                <Emoji symbol="✏️" size={14} />
+              </Pressable>
+              <Pressable style={styles.deleteBtn} onPress={confirmDelete} disabled={deleting}>
+                <Emoji symbol="🗑️" size={14} />
+              </Pressable>
+            </>
           ) : null}
         </View>
 
@@ -92,7 +118,31 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
             <Text style={styles.item}>{post.itemName}</Text>
             <RecycleBadge recyclable={imp.recyclable} label={imp.recycleLabel} />
           </View>
-          {post.funFact ? <Text style={styles.fact}>{post.funFact}</Text> : null}
+          {editing ? (
+            <View style={styles.editBox}>
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                placeholder="Add a caption"
+                placeholderTextColor={colors.inkDim}
+                style={styles.captionInput}
+                multiline
+                maxLength={280}
+              />
+              <View style={styles.editActions}>
+                <Pressable onPress={() => { setEditing(false); setDraft(caption); }} hitSlop={6}>
+                  <Text style={styles.editLink}>Cancel</Text>
+                </Pressable>
+                <Pressable onPress={saveCaption} disabled={saving} hitSlop={6}>
+                  <Text style={[styles.editLink, styles.editLinkStrong]}>
+                    {saving ? 'Saving…' : 'Save'}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : caption ? (
+            <Text style={styles.fact}>{caption}</Text>
+          ) : null}
           <View style={styles.stats}>
             <View style={styles.stat}>
               <Text style={[styles.statNum, { color: colors.terracotta }]}>+{post.points}</Text>
@@ -192,4 +242,13 @@ const styles = StyleSheet.create({
   actionText: { fontWeight: '700', fontSize: 13, color: colors.inkDim },
   actionTextLiked: { color: '#8A3B5C' },
   deleteBtn: { padding: 6, borderRadius: 8, flexShrink: 0 },
+  editBox: { marginTop: 6 },
+  captionInput: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 8, fontSize: 13.5,
+    color: colors.ink, minHeight: 54, textAlignVertical: 'top',
+  },
+  editActions: { flexDirection: 'row', gap: 18, marginTop: 8 },
+  editLink: { fontSize: 13.5, fontWeight: '600', color: colors.forest },
+  editLinkStrong: { color: colors.terracotta },
 });

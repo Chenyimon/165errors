@@ -69,13 +69,14 @@ const POSTING_MESSAGES = [
 export default function ScanScreen() {
   const navigation = useNavigation();
   const { profile, saveProfile, guestTag } = useProfile();
-  const [stage, setStage] = useState('idle'); // idle | analyzing | review | unclear
+  const [stage, setStage] = useState('idle'); // idle | analyzing | review | unclear | noroute
   const [analyzingMsg, setAnalyzingMsg] = useState(ANALYZING_MESSAGES[0]);
   const [postingMsg, setPostingMsg] = useState(POSTING_MESSAGES[0]);
   const [pending, setPending] = useState(null);
   const [posting, setPosting] = useState(false);
   const [checkedTips, setCheckedTips] = useState([]);
   const [unclearUri, setUnclearUri] = useState(null);
+  const [noRoute, setNoRoute] = useState(null);
   const [captionText, setCaptionText] = useState('');
   const [celebrate, setCelebrate] = useState(0);
   const [captionFocused, setCaptionFocused] = useState(false);
@@ -104,6 +105,22 @@ export default function ScanScreen() {
       const { uri: resizedUri, base64, mediaType } = await prepareImageForUpload(uri);
 
       const result = await classifyImage(base64, mediaType);
+
+      // Nothing recyclable in the photo, or an item with no route in Singapore
+      // (a stone, a leaf, a styrofoam box). The agent is confident, so this is
+      // not the "unclear" case - there is simply nothing to award. Show what it
+      // is and where it should go, but do not let it reach the feed.
+      if (!result.error && result.points === 0) {
+        clearInterval(msgTimer);
+        setUnclearUri(resizedUri);
+        setNoRoute({
+          itemName: result.item_name || 'That item',
+          where: result.where_to_recycle || 'General waste chute',
+          note: result.fun_fact || '',
+        });
+        setStage('noroute');
+        return;
+      }
 
       if (result.needs_confirmation) {
         clearInterval(msgTimer);
@@ -139,6 +156,7 @@ export default function ScanScreen() {
 
   function retake() {
     setPending(null);
+    setNoRoute(null);
     setCheckedTips([]);
     setUnclearUri(null);
     setCaptionText('');
@@ -277,6 +295,29 @@ export default function ScanScreen() {
           </View>
         )}
 
+        {stage === 'noroute' && noRoute && unclearUri && (
+          <View>
+            <View style={styles.previewCard}>
+              <Image source={{ uri: unclearUri }} style={styles.previewImage} />
+              <View style={[styles.previewBody, { alignItems: 'center' }]}>
+                <Text style={styles.prepLabel}>Not recyclable here</Text>
+                <Text style={[styles.itemName, { textAlign: 'center' }]}>{noRoute.itemName}</Text>
+                <Text style={[styles.factText, { textAlign: 'center' }]}>
+                  {noRoute.note}
+                </Text>
+                <View style={styles.noRouteWhere}>
+                  <Text style={styles.noRouteWhereLabel}>Where it should go</Text>
+                  <Text style={styles.noRouteWhereText}>{noRoute.where}</Text>
+                </View>
+                <Text style={styles.noRouteFoot}>
+                  No points for this one, so there's nothing to post — but now you know.
+                </Text>
+              </View>
+            </View>
+            <Button title="Scan something else" variant="primary" onPress={retake} style={{ width: '100%', marginTop: 18 }} />
+          </View>
+        )}
+
         {stage === 'review' && pending && (
           <View>
             <View style={styles.previewCard}>
@@ -389,6 +430,34 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
+  noRouteWhere: {
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: colors.track,
+    alignSelf: 'stretch',
+  },
+  noRouteWhereLabel: {
+    fontSize: 11,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    color: colors.inkDim,
+    textAlign: 'center',
+    marginBottom: 3,
+  },
+  noRouteWhereText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.ink,
+    textAlign: 'center',
+  },
+  noRouteFoot: {
+    marginTop: 14,
+    fontSize: 13,
+    color: colors.inkDim,
+    textAlign: 'center',
+  },
   screen: { flex: 1, backgroundColor: colors.surface },
   content: { flexGrow: 1, padding: 18 },
   title: {

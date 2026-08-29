@@ -178,6 +178,17 @@ export async function toggleLike(postId, guestTag) {
   return res.json();
 }
 
+export async function updatePost(postId, funFact, guestTag) {
+  const qs = !authToken && guestTag ? `?guest_tag=${encodeURIComponent(guestTag)}` : '';
+  const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}${qs}`, {
+    method: 'PATCH',
+    headers: requestHeaders({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify({ fun_fact: funFact }),
+  });
+  if (!res.ok) throw new Error('update failed: ' + res.status);
+  return res.json();
+}
+
 export async function deletePost(postId, guestTag) {
   const qs = !authToken && guestTag ? `?guest_tag=${encodeURIComponent(guestTag)}` : '';
   const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}${qs}`, {

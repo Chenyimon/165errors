@@ -14,6 +14,7 @@ import { showToast } from '../lib/toast';
 import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 import Emoji from '../components/Emoji';
+import MyPostsModal from '../components/MyPostsModal';
 
 const MEDAL_EMOJI = { 1: '🥇', 2: '🥈', 3: '🥉' };
 const MEDAL_COLOR = { 1: '#D4A017', 2: '#9AA5B1', 3: '#B8722D' };
@@ -45,6 +46,8 @@ export default function ProfileScreen() {
   const [medalsVisible, setMedalsVisible] = useState(false);
   const [medals, setMedals] = useState([]);
   const [medalsLoading, setMedalsLoading] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [myPostsVisible, setMyPostsVisible] = useState(false);
 
   useEffect(() => {
     if (!medalsVisible) return;
@@ -121,7 +124,18 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader />
+      <AppHeader
+        rightAction={
+          <Pressable
+            style={styles.menuBtn}
+            onPress={() => setMenuVisible(true)}
+            accessibilityLabel="More"
+            hitSlop={6}
+          >
+            <Text style={styles.menuDots}>⋯</Text>
+          </Pressable>
+        }
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Your impact</Text>
         <View style={styles.heroBlock}>
@@ -316,6 +330,36 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
 
+      <Modal visible={menuVisible} animationType="fade" transparent onRequestClose={() => setMenuVisible(false)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setMenuVisible(false)}>
+          <View style={styles.menuSheet}>
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => { setMenuVisible(false); setMyPostsVisible(true); }}
+            >
+              <Emoji symbol="📸" size={17} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuItemText}>Your posts</Text>
+                <Text style={styles.menuItemSub}>Newest first — edit captions or delete</Text>
+              </View>
+            </Pressable>
+            <View style={styles.menuDivider} />
+            <Pressable
+              style={styles.menuItem}
+              onPress={() => { setMenuVisible(false); setMedalsVisible(true); }}
+            >
+              <Emoji symbol="🏅" size={17} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.menuItemText}>Medals</Text>
+                <Text style={styles.menuItemSub}>Every medal you have earned</Text>
+              </View>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
+      <MyPostsModal visible={myPostsVisible} onClose={() => setMyPostsVisible(false)} />
+
       <Modal visible={medalsVisible} animationType="slide" transparent onRequestClose={() => setMedalsVisible(false)}>
         <View style={styles.overlay}>
           <View style={styles.sheet}>
@@ -355,6 +399,29 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  menuBtn: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: colors.sage,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  menuDots: { fontSize: 20, lineHeight: 22, color: colors.forest, fontWeight: '800' },
+  menuBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-start', alignItems: 'flex-end',
+    paddingTop: 96, paddingRight: 14,
+  },
+  menuSheet: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    paddingVertical: 6,
+    width: 268,
+    shadowColor: '#000', shadowOpacity: 0.16, shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 }, elevation: 6,
+  },
+  menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 13 },
+  menuItemText: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  menuItemSub: { fontSize: 12, color: colors.inkDim, marginTop: 1 },
+  menuDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: 16 },
   screen: { flex: 1, backgroundColor: colors.surface },
   content: { padding: 18, paddingBottom: 40 },
   title: {

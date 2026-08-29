@@ -736,6 +736,40 @@ def create_comment(
     }
 
 
+class UpdatePostRequest(BaseModel):
+    fun_fact: str = ""
+
+
+@app.patch("/api/posts/{post_id}")
+def update_post(
+    post_id: str,
+    req: UpdatePostRequest,
+    guest_tag: Optional[str] = None,
+    username: Optional[str] = Depends(get_optional_username),
+    x_app_secret: Optional[str] = Header(default=None),
+):
+    """Edit a post's caption. Only the caption - the item, category and score
+    come from the agent, and letting the app change them would put the
+    leaderboard back under client control."""
+    check_secret(x_app_secret)
+    identity = username or guest_display_name(guest_tag)
+    if not identity:
+        raise HTTPException(status_code=401, detail="could not verify identity")
+
+    with get_conn() as conn:
+        row = conn.execute("SELECT username FROM posts WHERE id = ?", (post_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="post not found")
+        if row["username"] != identity:
+            raise HTTPException(status_code=403, detail="you can only edit your own posts")
+        conn.execute(
+            "UPDATE posts SET fun_fact = ? WHERE id = ?",
+            (req.fun_fact.strip()[:280], post_id),
+        )
+
+    return {"ok": True, "funFact": req.fun_fact.strip()[:280]}
+
+
 @app.delete("/api/posts/{post_id}")
 def delete_post(
     post_id: str,

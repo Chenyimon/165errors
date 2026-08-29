@@ -7,7 +7,9 @@ import { useFriendsModal } from '../lib/FriendsModalContext';
 import Emoji from './Emoji';
 import EdMark from './EdMark';
 
-export default function AppHeader() {
+// `rightAction` lets one screen add its own button beside Friends without
+// putting it on every screen.
+export default function AppHeader({ rightAction }) {
   const insets = useSafeAreaInsets();
   const { open } = useFriendsModal();
 
@@ -19,9 +21,12 @@ export default function AppHeader() {
           SORT<Text style={styles.slash}>/</Text>ED
         </Text>
       </View>
-      <Pressable style={styles.friendsBtn} onPress={open} accessibilityLabel="Friends">
-        <Emoji symbol="👥" size={16} />
-      </Pressable>
+      <View style={styles.actions}>
+        {rightAction}
+        <Pressable style={styles.friendsBtn} onPress={open} accessibilityLabel="Friends">
+          <Emoji symbol="👥" size={16} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -38,6 +43,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wordmark: { fontWeight: '800', fontSize: 20, color: colors.forest },
   slash: { color: colors.terracotta },
   friendsBtn: {
