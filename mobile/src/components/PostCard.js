@@ -107,6 +107,11 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
               <Text style={styles.statLbl}>Points</Text>
             </View>
           </View>
+          <View style={styles.postDivider}>
+            <View style={styles.postDividerLine} />
+            <Emoji symbol="🌱" size={11} />
+            <View style={styles.postDividerLine} />
+          </View>
           <View style={styles.actions}>
             <Pressable
               style={[styles.actionBtn, liked && styles.actionBtnLiked]}
@@ -177,7 +182,9 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center' },
   statNum: { fontWeight: '800', fontSize: 15, color: colors.ink },
   statLbl: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.4, color: colors.inkDim, marginTop: 2 },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  postDivider: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12, marginBottom: 10 },
+  postDividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
+  actions: { flexDirection: 'row', gap: 8 },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',

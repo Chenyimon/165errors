@@ -47,3 +47,14 @@ export function nextMilestone(points) {
   const found = steps.find((m) => m > points);
   return found || Math.ceil((points + 500) / 500) * 500;
 }
+
+export function edMessage(profile) {
+  if (profile.totalScans === 0) return "Let's sort your first item together — tap Scan to get started!";
+  if (profile.currentStreak >= 7) return `${profile.currentStreak}-day streak?! You're unstoppable. 🔥`;
+  if (profile.currentStreak >= 2) return `${profile.currentStreak} days in a row — don't break the chain now!`;
+  const remaining = nextMilestone(profile.totalPoints) - profile.totalPoints;
+  if (remaining <= 50) return `Only ${remaining} points to your next milestone. So close!`;
+  if (computeBadges(profile).length >= 5) return "Look at that badge collection — you're a sorting legend.";
+  if (profile.totalPoints >= 500) return 'Your impact is really adding up. Keep it going!';
+  return 'Every scan helps — what are we sorting next?';
+}
