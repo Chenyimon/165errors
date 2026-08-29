@@ -1,4 +1,15 @@
-"""HTTP server - the bridge between the phone app and scorer.py.
+"""Development-only scorer. NOT the server the app talks to.
+
+The app needs server/main.py, which serves /api/classify, auth, posts and the
+leaderboard. This file only serves /score and /score-agent, so if it takes port
+8000 every request from the app 404s.
+
+Run it on a different port for testing:
+    ./.venv/bin/uvicorn server:app --port 8001
+
+Original docstring follows.
+
+HTTP server - the bridge between the phone app and scorer.py.
 
 The phone cannot call a Python function, so we expose score_image() as a URL
 the app can POST a photo to. Run it with:
