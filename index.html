@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>SORT/ED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181A;
+    --paper:#1E2420;
+    --paper-raised:#242B25;
+    --chalk:#EDEAE4;
+    --chalk-dim:#9FA69C;
+    --signal:#FF6B35;
+    --moss:#6B9B5E;
+    --line:#333B34;
+    --danger:#D9634A;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:#0A0C0A;
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+  }
+  #app{
+    width:100%;
+    max-width:430px;
+    min-height:100vh;
+    background:var(--ink);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:18px 18px 14px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+    background:var(--ink);
+  }
+  .wordmark{
+    font-family:'Archivo Black',sans-serif;
+    font-size:20px;
+    letter-spacing:0.5px;
+  }
+  .wordmark span{color:var(--signal);}
+  .header-stats{display:flex; gap:14px; align-items:center;}
+  .stat-pill{
+    display:flex; align-items:center; gap:5px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px; font-weight:600;
+    color:var(--chalk);
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:5px 10px;
+  }
+  .stat-pill .icon{font-size:13px;}
+
+  /* ---------- Views ---------- */
+  main{flex:1; padding:20px 18px 100px; position:relative;}
+  .view{display:none; animation:fadeIn .25s ease;}
+  .view.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+  h1.view-title{
+    font-family:'Archivo Black',sans-serif;
+    font-size:15px;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    color:var(--chalk-dim);
+    margin:0 0 18px;
+  }
+
+  /* ---------- Scan view ---------- */
+  .scan-hero{
+    display:flex; flex-direction:column; align-items:center;
+    padding:30px 10px 10px;
+    text-align:center;
+  }
+  .scan-btn{
+    width:180px; height:180px;
+    border-radius:50%;
+    border:2px dashed var(--signal);
+    background:radial-gradient(circle at 30% 30%, rgba(255,107,53,0.12), transparent 70%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:10px;
+    cursor:pointer;
+    transition:transform .15s ease, background .15s ease;
+  }
+  .scan-btn:active{transform:scale(0.96); background:rgba(255,107,53,0.18);}
+  .scan-btn svg{width:46px; height:46px;}
+  .scan-btn .label{
+    font-family:'Archivo Black',sans-serif;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--signal);
+  }
+  .scan-sub{color:var(--chalk-dim); font-size:13px; margin-top:18px; max-width:260px; line-height:1.5;}
+
+  .analyzing{
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    padding:50px 10px;
+  }
+  .analyzing img{
+    width:140px; height:140px; object-fit:cover; border-radius:var(--radius);
+    border:1px solid var(--line); filter:saturate(0.6);
+  }
+  .spinner{
+    width:26px; height:26px;
+    border:3px solid var(--line);
+    border-top-color:var(--signal);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .analyzing .msg{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--chalk-dim); letter-spacing:0.5px;}
+
+  /* ---------- Ticket / reveal card ---------- */
+  .ticket{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+    position:relative;
+  }
+  .ticket-notch{
+    position:absolute; top:32px; left:-10px; width:20px; height:20px;
+    background:var(--ink); border-radius:50%;
+  }
+  .ticket-notch.right{left:auto; right:-10px;}
+  .ticket-head{
+    padding:22px 22px 16px;
+    text-align:center;
+    border-bottom:1px dashed var(--line);
+  }
+  .ticket-cat{
+    display:inline-block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--signal);
+    border:1px solid var(--signal);
+    border-radius:20px;
+    padding:3px 10px;
+    margin-bottom:10px;
+  }
+  .ticket-item{
+    font-family:'Archivo Black',sans-serif;
+    font-size:19px; line-height:1.3;
+  }
+  .ticket-stats{
+    display:flex;
+    padding:16px 22px;
+    gap:8px;
+  }
+  .ticket-stat{flex:1; text-align:center;}
+  .ticket-stat .num{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:20px; font-weight:600; color:var(--chalk);
+  }
+  .ticket-stat .lbl{
+    font-size:10px; letter-spacing:0.5px; text-transform:uppercase; color:var(--chalk-dim); margin-top:2px;
+  }
+  .ticket-points{
+    text-align:center;
+    padding:6px 22px 18px;
+    font-family:'Archivo Black',sans-serif;
+    font-size:30px;
+    color:var(--moss);
+  }
+  .ticket-points .plus{font-size:16px; vertical-align:top;}
+  .ticket-fact{
+    background:var(--paper-raised);
+    padding:14px 22px;
+    font-size:12.5px;
+    color:var(--chalk-dim);
+    line-height:1.5;
+    border-top:1px dashed var(--line);
+  }
+  .ticket-fact b{color:var(--chalk);}
+  .reveal-actions{display:flex; gap:10px; margin-top:18px;}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    flex:1;
+    padding:13px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    color:var(--chalk);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    text-align:center;
+  }
+  .btn.primary{background:var(--signal); border-color:var(--signal); color:#14181A;}
+  .btn:active{opacity:0.8;}
+
+  /* ---------- Feed ---------- */
+  .feed-row{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .feed-icon{
+    width:38px; height:38px; border-radius:10px;
+    background:var(--paper-raised);
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; flex-shrink:0;
+  }
+  .feed-mid{flex:1; min-width:0;}
+  .feed-item{font-size:14px; font-weight:600;}
+  .feed-time{font-size:11.5px; color:var(--chalk-dim); margin-top:1px;}
+  .feed-pts{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--moss); font-size:14px; flex-shrink:0;
+  }
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--chalk-dim);
+  }
+  .empty-state .big{font-size:34px; margin-bottom:10px;}
+  .empty-state p{font-size:13px; line-height:1.6;}
+
+  /* ---------- Leaderboard ---------- */
+  .lb-row{
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    margin-bottom:8px;
+    background:var(--paper);
+    border:1px solid var(--line);
+  }
+  .lb-row.me{border-color:var(--signal); background:rgba(255,107,53,0.08);}
+  .lb-rank{
+    font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:13px;
+    color:var(--chalk-dim); width:22px;
+  }
+  .lb-name{flex:1; font-size:14px; font-weight:600;}
+  .lb-pts{font-family:'IBM Plex Mono',monospace; font-weight:600; color:var(--moss); font-size:14px;}
+
+  .name-setup{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; text-align:center;
+  }
+  .name-setup p{font-size:13px; color:var(--chalk-dim); margin-bottom:14px; line-height:1.5;}
+  .name-setup input{
+    width:100%; padding:12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--paper-raised); color:var(--chalk); font-size:14px; margin-bottom:12px;
+    font-family:'Inter',sans-serif;
+  }
+  .name-setup input:focus{outline:1px solid var(--signal);}
+
+  /* ---------- Profile ---------- */
+  .profile-hero{text-align:center; padding:10px 0 26px;}
+  .profile-name{font-family:'Archivo Black',sans-serif; font-size:22px;}
+  .profile-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px;
+  }
+  .profile-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:12px;
+    padding:16px; text-align:center;
+  }
+  .profile-card .num{font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:600;}
+  .profile-card .lbl{font-size:11px; color:var(--chalk-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px;}
+
+  .section-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--chalk-dim);
+    margin:22px 0 10px;
+  }
+  .cat-bar-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-size:12.5px;}
+  .cat-bar-row .cat-name{width:64px; flex-shrink:0; color:var(--chalk-dim);}
+  .cat-bar-track{flex:1; height:8px; background:var(--paper-raised); border-radius:5px; overflow:hidden;}
+  .cat-bar-fill{height:100%; background:var(--moss); border-radius:5px;}
+  .cat-bar-count{font-family:'IBM Plex Mono',monospace; width:20px; text-align:right; color:var(--chalk-dim);}
+
+  .badge-grid{display:flex; flex-wrap:wrap; gap:8px;}
+  .badge{
+    background:var(--paper); border:1px solid var(--line); border-radius:20px;
+    padding:7px 12px; font-size:12px; display:flex; align-items:center; gap:6px;
+  }
+
+  /* ---------- Tab bar ---------- */
+  #tabbar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:430px;
+    display:flex;
+    background:var(--paper);
+    border-top:1px solid var(--line);
+    padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+    z-index:30;
+  }
+  .tab-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:none; border:none; color:var(--chalk-dim); cursor:pointer;
+    padding:6px 0; font-family:'Inter',sans-serif; font-size:10.5px; font-weight:600;
+    letter-spacing:0.3px; text-transform:uppercase;
+  }
+  .tab-btn svg{width:20px; height:20px;}
+  .tab-btn.active{color:var(--signal);}
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--chalk); color:var(--ink); padding:10px 18px; border-radius:30px;
+    font-size:13px; font-weight:600; opacity:0; pointer-events:none;
+    transition:all .25s ease; z-index:50; white-space:nowrap;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="wordmark">SORT<span>/</span>ED</div>
+    <div class="header-stats">
+      <div class="stat-pill"><span class="icon">🔥</span><span id="hdr-streak">0</span></div>
+      <div class="stat-pill"><span class="icon">⬢</span><span id="hdr-points">0</span></div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- SCAN VIEW -->
+    <section class="view active" id="view-scan">
+      <h1 class="view-title">Scan an item</h1>
+      <div id="scan-idle" class="scan-hero">
+        <button class="scan-btn" id="scan-trigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B35" stroke-width="1.6"><path d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .9-.55l.6-1.2A1 1 0 0 1 9.6 3.6h4.8a1 1 0 0 1 .9.55l.6 1.2a1 1 0 0 0 .9.55H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
+          <span class="label">Scan</span>
+        </button>
+        <p class="scan-sub">Photograph what you're recycling. AI identifies the material and estimates your impact.</p>
+      </div>
+
+      <div id="scan-analyzing" class="analyzing" style="display:none;">
+        <img id="analyzing-preview" src="" alt="">
+        <div class="spinner"></div>
+        <div class="msg" id="analyzing-msg">READING MATERIAL...</div>
+      </div>
+
+      <div id="scan-reveal" style="display:none;"></div>
+    </section>
+
+    <!-- FEED VIEW -->
+    <section class="view" id="view-feed">
+      <h1 class="view-title">Your log</h1>
+      <div id="feed-list"></div>
+    </section>
+
+    <!-- LEADERBOARD VIEW -->
+    <section class="view" id="view-board">
+      <h1 class="view-title">Leaderboard</h1>
+      <div id="board-content"></div>
+    </section>
+
+    <!-- PROFILE VIEW -->
+    <section class="view" id="view-profile">
+      <h1 class="view-title">Your impact</h1>
+      <div id="profile-content"></div>
+    </section>
+
+  </main>
+
+  <nav id="tabbar">
+    <button class="tab-btn active" data-view="scan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8a2 2 0 0 1 2-2h1.2a1 1 0 0 0 .9-.55l.6-1.2A1 1 0 0 1 9.6 3.6h4.8a1 1 0 0 1 .9.55l.6 1.2a1 1 0 0 0 .9.55H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="12.5" r="3.2"/></svg>
+      Scan
+    </button>
+    <button class="tab-btn" data-view="feed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4h9l3 3v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M9 10h6M9 14h6M9 18h3"/></svg>
+      Log
+    </button>
+    <button class="tab-btn" data-view="board">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0V4z"/><path d="M6 6H4a2 2 0 0 0 0 4h2M18 6h2a2 2 0 0 1 0 4h-2"/></svg>
+      Board
+    </button>
+    <button class="tab-btn" data-view="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
+      You
+    </button>
+  </nav>
+
+  <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+  <div id="toast"></div>
+</div>
+
+<script>
+(function(){
+  const STORAGE = window.storage;
+
+  // ---- Backend proxy config ----
+  // After deploying your Cloudflare Worker (see README), replace these two values.
+  const API_ENDPOINT = "https://sorted-proxy.YOUR-SUBDOMAIN.workers.dev";
+  const APP_SECRET = "REPLACE_WITH_YOUR_OWN_SECRET"; // must match APP_SECRET set on the Worker
+
+  const IMPACT = {
+    plastic:{co2:1.5, label:'Plastic', icon:'♳'},
+    glass:{co2:0.3, label:'Glass', icon:'🍾'},
+    metal:{co2:4.0, label:'Metal', icon:'🥫'},
+    paper:{co2:0.9, label:'Paper', icon:'📄'},
+    compost:{co2:0.4, label:'Compost', icon:'🍂'},
+    other:{co2:0.5, label:'Other', icon:'♻️'}
+  };
+  const SIZE_G = {small:15, medium:80, large:300};
+
+  let profile = null;
+  let scans = [];
+
+  function defaultProfile(){
+    return {username:null, totalPoints:0, currentStreak:0, longestStreak:0, lastScanDate:null, totalScans:0, byCategory:{}};
+  }
+
+  async function loadProfile(){
+    try{
+      const r = await STORAGE.get('profile', false);
+      profile = r ? JSON.parse(r.value) : defaultProfile();
+    }catch(e){ profile = defaultProfile(); }
+  }
+  async function saveProfile(){
+    try{ await STORAGE.set('profile', JSON.stringify(profile), false); }
+    catch(e){ console.error('save profile failed', e); }
+  }
+  async function loadScans(){
+    try{
+      const r = await STORAGE.get('scans', false);
+      scans = r ? JSON.parse(r.value) : [];
+    }catch(e){ scans = []; }
+  }
+  async function saveScans(){
+    try{ await STORAGE.set('scans', JSON.stringify(scans.slice(0,200)), false); }
+    catch(e){ console.error('save scans failed', e); }
+  }
+  async function updateLeaderboardEntry(){
+    if(!profile.username) return;
+    try{
+      await STORAGE.set('board:'+profile.username, JSON.stringify({username:profile.username, points:profile.totalPoints}), true);
+    }catch(e){ console.error('leaderboard update failed', e); }
+  }
+  async function loadLeaderboard(){
+    try{
+      const listRes = await STORAGE.list('board:', true);
+      const keys = (listRes && listRes.keys) || [];
+      const entries = [];
+      for(const k of keys.slice(0,60)){
+        try{
+          const r = await STORAGE.get(k, true);
+          if(r) entries.push(JSON.parse(r.value));
+        }catch(e){}
+      }
+      entries.sort((a,b)=>b.points-a.points);
+      return entries;
+    }catch(e){ return []; }
+  }
+
+  function fileToBase64(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        const result = reader.result;
+        const meta = result.substring(0,result.indexOf(','));
+        const b64 = result.substring(result.indexOf(',')+1);
+        const mediaType = (meta.match(/data:(.*);base64/) || [,'image/jpeg'])[1];
+        resolve({base64:b64, mediaType});
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function classifyImage(base64, mediaType){
+    const systemPrompt = 'You are a recycling classifier for an app called SORT/ED. Given a photo of an item, respond with ONLY a raw JSON object, no markdown fences, no extra text, exactly in this shape: {"category":"plastic|glass|metal|paper|compost|other","item_name":"short 2-4 word name of the item","size_bucket":"small|medium|large","fun_fact":"one short sentence, under 25 words, about the environmental benefit of recycling this specific material"}. If the photo does not clearly show a recyclable item, use category "other".';
+    const body = {
+      model: "claude-sonnet-4-6",
+      max_tokens: 300,
+      system: systemPrompt,
+      messages: [{
+        role: "user",
+        content: [
+          {type:"image", source:{type:"base64", media_type: mediaType, data: base64}},
+          {type:"text", text:"Classify this item for recycling."}
+        ]
+      }]
+    };
+    const res = await fetch(API_ENDPOINT, {
+      method:"POST",
+      headers:{"Content-Type":"application/json", "x-app-secret": APP_SECRET},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    const textBlock = (data.content||[]).find(b=>b.type==='text');
+    let raw = textBlock ? textBlock.text : '{}';
+    raw = raw.replace(/```json|```/g,'').trim();
+    return JSON.parse(raw);
+  }
+
+  function computeImpact(category, sizeBucket){
+    const imp = IMPACT[category] || IMPACT.other;
+    const weightG = SIZE_G[sizeBucket] || SIZE_G.medium;
+    const co2G = Math.round(weightG * imp.co2);
+    const points = Math.max(5, Math.round(co2G/3));
+    return {weightG, co2G, points, imp, category: IMPACT[category] ? category : 'other'};
+  }
+
+  function updateStreak(){
+    const today = new Date().toISOString().slice(0,10);
+    if(profile.lastScanDate === today) return;
+    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    profile.currentStreak = (profile.lastScanDate === yesterday) ? profile.currentStreak+1 : 1;
+    profile.lastScanDate = today;
+    profile.longestStreak = Math.max(profile.longestStreak, profile.currentStreak);
+  }
+
+  function applyStreakBonus(points){
+    const bonus = 1 + Math.min(profile.currentStreak,10)*0.1;
+    return Math.round(points*bonus);
+  }
+
+  function timeAgo(ts){
+    const diff = Date.now()-ts;
+    const min = Math.floor(diff/60000);
+    if(min < 1) return 'just now';
+    if(min < 60) return min+'m ago';
+    const hr = Math.floor(min/60);
+    if(hr < 24) return hr+'h ago';
+    return Math.floor(hr/24)+'d ago';
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'), 2200);
+  }
+
+  function renderHeader(){
+    document.getElementById('hdr-streak').textContent = profile.currentStreak;
+    document.getElementById('hdr-points').textContent = profile.totalPoints;
+  }
+
+  // ---------- Scan flow ----------
+  const cameraInput = document.getElementById('camera-input');
+  document.getElementById('scan-trigger').addEventListener('click', ()=> cameraInput.click());
+  cameraInput.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) handleFile(file);
+    cameraInput.value = '';
+  });
+
+  const analyzingMsgs = ['READING MATERIAL...','ESTIMATING WEIGHT...','CALCULATING IMPACT...'];
+  async function handleFile(file){
+    document.getElementById('scan-idle').style.display = 'none';
+    document.getElementById('scan-reveal').style.display = 'none';
+    document.getElementById('scan-analyzing').style.display = 'flex';
+    const previewUrl = URL.createObjectURL(file);
+    document.getElementById('analyzing-preview').src = previewUrl;
+
+    let msgIdx = 0;
+    const msgEl = document.getElementById('analyzing-msg');
+    msgEl.textContent = analyzingMsgs[0];
+    const msgTimer = setInterval(()=>{
+      msgIdx = (msgIdx+1) % analyzingMsgs.length;
+      msgEl.textContent = analyzingMsgs[msgIdx];
+    }, 1100);
+
+    try{
+      const {base64, mediaType} = await fileToBase64(file);
+      const result = await classifyImage(base64, mediaType);
+      const {weightG, co2G, points, imp, category} = computeImpact(result.category, result.size_bucket);
+      updateStreak();
+      const finalPoints = applyStreakBonus(points);
+
+      const scan = {
+        id: Date.now().toString(),
+        ts: Date.now(),
+        category,
+        itemName: result.item_name || imp.label,
+        weightG, co2G, points: finalPoints,
+        funFact: result.fun_fact || ''
+      };
+      scans.unshift(scan);
+      profile.totalPoints += finalPoints;
+      profile.totalScans += 1;
+      profile.byCategory[category] = (profile.byCategory[category]||0)+1;
+
+      await saveScans();
+      await saveProfile();
+      await updateLeaderboardEntry();
+
+      clearInterval(msgTimer);
+      document.getElementById('scan-analyzing').style.display = 'none';
+      renderReveal(scan);
+      renderHeader();
+    }catch(err){
+      console.error(err);
+      clearInterval(msgTimer);
+      document.getElementById('scan-analyzing').style.display = 'none';
+      document.getElementById('scan-idle').style.display = 'flex';
+      showToast("Couldn't read that scan — try again");
+    }
+  }
+
+  function renderReveal(scan){
+    const imp = IMPACT[scan.category];
+    const revealEl = document.getElementById('scan-reveal');
+    revealEl.innerHTML = `
+      <div class="ticket">
+        <div class="ticket-notch"></div>
+        <div class="ticket-notch right"></div>
+        <div class="ticket-head">
+          <div class="ticket-cat">${imp.icon} ${imp.label}</div>
+          <div class="ticket-item">${escapeHtml(scan.itemName)}</div>
+        </div>
+        <div class="ticket-stats">
+          <div class="ticket-stat"><div class="num">${scan.weightG}g</div><div class="lbl">Est. weight</div></div>
+          <div class="ticket-stat"><div class="num">${scan.co2G}g</div><div class="lbl">CO2 saved</div></div>
+          <div class="ticket-stat"><div class="num">${profile.currentStreak}</div><div class="lbl">Day streak</div></div>
+        </div>
+        <div class="ticket-points">+${scan.points}<span class="plus">pts</span></div>
+        ${scan.funFact ? `<div class="ticket-fact"><b>Did you know:</b> ${escapeHtml(scan.funFact)}</div>` : ''}
+      </div>
+      <div class="reveal-actions">
+        <button class="btn primary" id="scan-again-btn">Scan another</button>
+      </div>
+    `;
+    revealEl.style.display = 'block';
+    document.getElementById('scan-again-btn').addEventListener('click', ()=>{
+      revealEl.style.display = 'none';
+      document.getElementById('scan-idle').style.display = 'flex';
+    });
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  // ---------- Feed ----------
+  function renderFeed(){
+    const el = document.getElementById('feed-list');
+    if(scans.length === 0){
+      el.innerHTML = `<div class="empty-state"><div class="big">🗂️</div><p>No scans yet.<br>Head to the Scan tab to log your first item.</p></div>`;
+      return;
+    }
+    el.innerHTML = scans.map(s=>{
+      const imp = IMPACT[s.category];
+      return `<div class="feed-row">
+        <div class="feed-icon">${imp.icon}</div>
+        <div class="feed-mid">
+          <div class="feed-item">${escapeHtml(s.itemName)}</div>
+          <div class="feed-time">${timeAgo(s.ts)} · ${imp.label}</div>
+        </div>
+        <div class="feed-pts">+${s.points}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ---------- Leaderboard ----------
+  async function renderBoard(){
+    const el = document.getElementById('board-content');
+    if(!profile.username){
+      el.innerHTML = `<div class="name-setup">
+        <p>Pick a name to join the leaderboard. Everyone using this app link will see it.</p>
+        <input id="username-input" placeholder="Your name" maxlength="24">
+        <button class="btn primary" id="username-save" style="width:100%">Join leaderboard</button>
+      </div>`;
+      document.getElementById('username-save').addEventListener('click', async ()=>{
+        const val = document.getElementById('username-input').value.trim();
+        if(!val) return;
+        profile.username = val;
+        await saveProfile();
+        await updateLeaderboardEntry();
+        renderBoard();
+        renderProfile();
+      });
+      return;
+    }
+    el.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
+    const entries = await loadLeaderboard();
+    if(entries.length === 0){
+      el.innerHTML = `<div class="empty-state"><div class="big">🏆</div><p>You're the first one here.<br>Scan something to take the top spot.</p></div>`;
+      return;
+    }
+    el.innerHTML = entries.map((e,i)=>`
+      <div class="lb-row ${e.username===profile.username?'me':''}">
+        <div class="lb-rank">${i+1}</div>
+        <div class="lb-name">${escapeHtml(e.username)}${e.username===profile.username?' (you)':''}</div>
+        <div class="lb-pts">${e.points}</div>
+      </div>
+    `).join('');
+  }
+
+  // ---------- Profile ----------
+  function computeBadges(){
+    const b = [];
+    if(profile.totalScans>=1) b.push({icon:'🏷️', label:'First sort'});
+    if(profile.totalScans>=10) b.push({icon:'📦', label:'10 scans'});
+    if(profile.totalScans>=50) b.push({icon:'🏭', label:'50 scans'});
+    if(profile.longestStreak>=3) b.push({icon:'🔥', label:'3-day streak'});
+    if(profile.longestStreak>=7) b.push({icon:'🔥', label:'Week streak'});
+    if(profile.longestStreak>=30) b.push({icon:'🔥', label:'30-day streak'});
+    if(profile.totalPoints>=100) b.push({icon:'⭐', label:'100 pts'});
+    if(profile.totalPoints>=500) b.push({icon:'🌟', label:'500 pts'});
+    if(profile.totalPoints>=1000) b.push({icon:'💫', label:'1000 pts'});
+    return b;
+  }
+
+  function renderProfile(){
+    const el = document.getElementById('profile-content');
+    const badges = computeBadges();
+    const cats = Object.entries(profile.byCategory).sort((a,b)=>b[1]-a[1]);
+    const maxCat = cats.length ? cats[0][1] : 1;
+
+    el.innerHTML = `
+      <div class="profile-hero">
+        <div class="profile-name">${profile.username ? escapeHtml(profile.username) : 'Set a name in Board'}</div>
+      </div>
+      <div class="profile-grid">
+        <div class="profile-card"><div class="num">${profile.totalPoints}</div><div class="lbl">Total points</div></div>
+        <div class="profile-card"><div class="num">${profile.totalScans}</div><div class="lbl">Items sorted</div></div>
+        <div class="profile-card"><div class="num">${profile.currentStreak}</div><div class="lbl">Current streak</div></div>
+        <div class="profile-card"><div class="num">${profile.longestStreak}</div><div class="lbl">Longest streak</div></div>
+      </div>
+
+      <div class="section-label">By material</div>
+      ${cats.length ? cats.map(([cat,count])=>{
+        const imp = IMPACT[cat];
+        const pct = Math.round((count/maxCat)*100);
+        return `<div class="cat-bar-row">
+          <div class="cat-name">${imp.icon} ${imp.label}</div>
+          <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%"></div></div>
+          <div class="cat-bar-count">${count}</div>
+        </div>`;
+      }).join('') : `<p style="color:var(--chalk-dim); font-size:13px;">Nothing sorted yet.</p>`}
+
+      <div class="section-label">Badges</div>
+      <div class="badge-grid">
+        ${badges.length ? badges.map(b=>`<div class="badge">${b.icon} ${b.label}</div>`).join('') : `<p style="color:var(--chalk-dim); font-size:13px;">Scan items to earn badges.</p>`}
+      </div>
+    `;
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('view-'+btn.dataset.view).classList.add('active');
+      if(btn.dataset.view === 'feed') renderFeed();
+      if(btn.dataset.view === 'board') renderBoard();
+      if(btn.dataset.view === 'profile') renderProfile();
+    });
+  });
+
+  // ---------- Init ----------
+  (async function init(){
+    await Promise.all([loadProfile(), loadScans()]);
+    renderHeader();
+  })();
+
+})();
+</script>
+</body>
+</html>
