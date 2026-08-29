@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>SORT/ED</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='26' fill='%23E7A94C'/%3E%3Crect x='18' y='23' width='64' height='36' rx='14' fill='%23C6D3BA'/%3E%3Ccircle cx='35' cy='41' r='7' fill='%2320362A'/%3E%3Ccircle cx='65' cy='41' r='7' fill='%2320362A'/%3E%3Cpolygon points='50,67 56,78 44,78' fill='%236B3B57'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -68,6 +69,9 @@
     color:var(--forest);
   }
   .wordmark span{color:var(--terracotta);}
+  .brand{display:flex; align-items:center; gap:9px;}
+  .auth-card .brand{justify-content:center; margin-bottom:4px;}
+  .brand-icon{width:30px; height:30px; flex:none; border-radius:8px; display:block;}
 
   /* ---------- Auth ---------- */
   .auth-view{flex:1; display:flex; align-items:center; justify-content:center; padding:24px;}
@@ -327,6 +331,12 @@
     line-height:1.5;
   }
   .ticket-fact b{color:var(--ink);}
+  .caption-input{
+    width:100%; min-height:64px; resize:vertical; padding:11px 12px; border-radius:var(--radius-sm);
+    border:1.5px solid var(--border); background:var(--surface-alt); color:var(--ink);
+    font-size:13.5px; font-family:'Nunito',sans-serif; line-height:1.5;
+  }
+  .caption-input:focus{outline:none; border-color:var(--forest);}
   .reveal-actions{display:flex; gap:10px; margin-top:18px;}
   .posting-status{
     display:flex; align-items:center; justify-content:center; gap:10px;
@@ -583,7 +593,16 @@
 
   <div id="auth-view" class="auth-view">
     <div class="auth-card form-card">
-      <div class="wordmark">SORT<span>/</span>ED</div>
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 100 100" aria-hidden="true">
+          <rect width="100" height="100" rx="26" fill="#E7A94C"/>
+          <rect x="18" y="23" width="64" height="36" rx="14" fill="#C6D3BA"/>
+          <circle cx="35" cy="41" r="7" fill="#20362A"/>
+          <circle cx="65" cy="41" r="7" fill="#20362A"/>
+          <polygon points="50,67 56,78 44,78" fill="#6B3B57"/>
+        </svg>
+        <div class="wordmark">SORT<span>/</span>ED</div>
+      </div>
       <p id="auth-sub">Log in to add friends and appear on the leaderboard.</p>
       <input id="auth-username" placeholder="Username" maxlength="24" autocapitalize="none" autocomplete="username">
       <input id="auth-password" placeholder="Password" type="password" maxlength="64" autocomplete="current-password">
@@ -598,7 +617,16 @@
   <div id="app-shell" class="app-shell" style="display:none;">
 
   <header>
-    <div class="wordmark">SORT<span>/</span>ED</div>
+    <div class="brand">
+      <svg class="brand-icon" viewBox="0 0 100 100" aria-hidden="true">
+        <rect width="100" height="100" rx="26" fill="#E7A94C"/>
+        <rect x="18" y="23" width="64" height="36" rx="14" fill="#C6D3BA"/>
+        <circle cx="35" cy="41" r="7" fill="#20362A"/>
+        <circle cx="65" cy="41" r="7" fill="#20362A"/>
+        <polygon points="50,67 56,78 44,78" fill="#6B3B57"/>
+      </svg>
+      <div class="wordmark">SORT<span>/</span>ED</div>
+    </div>
     <button class="friends-btn" id="friends-btn" aria-label="Friends">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.8-3 3-4.6 5.5-4.6s4.7 1.6 5.5 4.6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.6c2 .2 3.6 1.7 4.3 4.4"/></svg>
     </button>
@@ -702,6 +730,20 @@
         <button class="panel-close" id="day-panel-close" type="button">✕</button>
       </div>
       <div id="day-panel-body"></div>
+    </div>
+  </div>
+
+  <div id="confirm-panel" class="panel-overlay" style="display:none;">
+    <div class="panel-sheet" style="max-width:360px;">
+      <div class="panel-header">
+        <div class="panel-title" id="confirm-title">Are you sure?</div>
+        <button class="panel-close" id="confirm-close" type="button">✕</button>
+      </div>
+      <p id="confirm-message" style="color:var(--ink-dim); font-size:14px; line-height:1.5; margin:0 0 18px;"></p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="confirm-cancel-btn" style="flex:1;">Cancel</button>
+        <button class="btn primary" id="confirm-ok-btn" style="flex:1; background:var(--terracotta); border-color:var(--terracotta);">Delete</button>
+      </div>
     </div>
   </div>
 
@@ -1151,7 +1193,8 @@
         category,
         itemName: result.item_name || imp.label,
         weightG, co2G, points,
-        funFact: result.fun_fact || '',
+        funFact: '',
+        aiFunFact: result.fun_fact || '',
         imageDataUrl
       };
 
@@ -1206,7 +1249,8 @@
             <div class="ticket-stat"><div class="num">${pending.co2G}g</div><div class="lbl">CO2 saved</div></div>
             <div class="ticket-stat"><div class="num accent">+${pending.points}</div><div class="lbl">Points</div></div>
           </div>
-          ${pending.funFact ? `<div class="ticket-fact"><b>Did you know:</b> ${escapeHtml(pending.funFact)}</div>` : ''}
+          <div class="prep-label" style="margin-top:14px;">Add a caption</div>
+          <textarea id="caption-input" class="caption-input" maxlength="280" placeholder="${pending.aiFunFact ? escapeHtml(pending.aiFunFact) : 'Say something about this...'}">${escapeHtml(pending.funFact || '')}</textarea>
           ${tips.length ? `
             <div class="prep-label">Before you toss it in</div>
             <div class="prep-list">
@@ -1228,7 +1272,11 @@
     revealEl.style.display = 'block';
     emojify(revealEl);
     document.getElementById('retake-btn').addEventListener('click', resetScanView);
-    document.getElementById('post-btn').addEventListener('click', ()=> finalizePost(pendingPost));
+    document.getElementById('post-btn').addEventListener('click', ()=>{
+      const captionEl = document.getElementById('caption-input');
+      pendingPost.funFact = captionEl ? captionEl.value.trim() : '';
+      finalizePost(pendingPost);
+    });
     revealEl.querySelectorAll('.prep-item').forEach(el=>{
       el.addEventListener('click', ()=>{
         const idx = Number(el.dataset.idx);
@@ -1298,6 +1346,33 @@
       renderReview(pending);
       showToast("Couldn't post — try again");
     }
+  }
+
+  // Browser-native confirm()/alert() are silently disabled in several embedded
+  // webviews (e.g. VS Code's Simple Browser), where confirm() just returns false
+  // without ever showing a dialog. This in-app modal works everywhere instead.
+  function showConfirm(message, title){
+    return new Promise((resolve)=>{
+      const panel = document.getElementById('confirm-panel');
+      document.getElementById('confirm-title').textContent = title || 'Are you sure?';
+      document.getElementById('confirm-message').textContent = message;
+      panel.style.display = 'flex';
+      const okBtn = document.getElementById('confirm-ok-btn');
+      const cancelBtn = document.getElementById('confirm-cancel-btn');
+      const closeBtn = document.getElementById('confirm-close');
+      function cleanup(result){
+        panel.style.display = 'none';
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        closeBtn.removeEventListener('click', onCancel);
+        resolve(result);
+      }
+      function onOk(){ cleanup(true); }
+      function onCancel(){ cleanup(false); }
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      closeBtn.addEventListener('click', onCancel);
+    });
   }
 
   function escapeHtml(s){
@@ -1406,7 +1481,8 @@
     });
     container.querySelectorAll('.post-delete-btn').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
-        if(!confirm('Delete this post? This cannot be undone.')) return;
+        const ok = await showConfirm('This cannot be undone.', 'Delete this post?');
+        if(!ok) return;
         btn.disabled = true;
         try{
           await deletePost(btn.dataset.postId);
