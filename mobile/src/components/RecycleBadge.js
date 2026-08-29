@@ -5,7 +5,7 @@ export default function RecycleBadge({ recyclable, label }) {
   return (
     <View style={[styles.badge, recyclable ? styles.yes : styles.no]}>
       <Text style={[styles.text, recyclable ? styles.textYes : styles.textNo]}>
-        {recyclable ? '✓' : '!'} {label}
+        {recyclable ? '✓ ' : ''}{label}
       </Text>
     </View>
   );

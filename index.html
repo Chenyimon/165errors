@@ -1391,7 +1391,7 @@
         <div class="post-preview-image"><img src="${pending.imageDataUrl}" alt=""></div>
         <div class="post-preview-body">
           <div class="ticket-cat tag-${imp.tag}">${imp.icon} ${imp.label}</div>
-          <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓' : '!'} ${imp.recycleLabel}</span>
+          <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓ ' : ''}${imp.recycleLabel}</span>
           <div class="ticket-item">${escapeHtml(pending.itemName)}</div>
           <div class="ticket-stats">
             <div class="ticket-stat"><div class="num">${pending.weightG}g</div><div class="lbl">Est. weight</div></div>
@@ -1569,7 +1569,7 @@
       </div>
       ${p.imageUrl ? `<div class="post-image"><img data-src="${postImageUrl(p.imageUrl)}" alt=""></div>` : ''}
       <div class="post-body">
-        <div class="post-item">${escapeHtml(p.itemName)} <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓' : '!'} ${imp.recycleLabel}</span></div>
+        <div class="post-item">${escapeHtml(p.itemName)} <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓ ' : ''}${imp.recycleLabel}</span></div>
         ${p.funFact ? `<div class="post-fact">${escapeHtml(p.funFact)}</div>` : ''}
         <div class="post-stats">
           <div class="post-stat"><span class="num">${p.weightG}g</span><span class="lbl">Weight</span></div>
@@ -1687,6 +1687,7 @@
     el.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
     const posts = await loadMyPosts();
     const grouped = groupPostsByDay(posts);
+    await loadJoinedEvents();
 
     const year = calendarCursor.getFullYear();
     const month = calendarCursor.getMonth();
@@ -1724,8 +1725,9 @@
         <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
       </div>
       <div class="calendar-grid">${cells}</div>
-    `;
+    ` + eventsSectionHtml();
     hydrateImages(el);
+    bindEventButtons(el);
 
     document.getElementById('cal-prev').addEventListener('click', ()=>{
       calendarCursor.setMonth(calendarCursor.getMonth()-1);
@@ -1791,14 +1793,14 @@
       }).join('')}
     `;
   }
-  function bindEventButtons(){
-    document.querySelectorAll('.event-join-btn').forEach(btn=>{
+  function bindEventButtons(container){
+    container.querySelectorAll('.event-join-btn').forEach(btn=>{
       btn.addEventListener('click', async ()=>{
         const id = btn.dataset.id;
         if(joinedEvents.includes(id)) joinedEvents = joinedEvents.filter(x=>x!==id);
         else joinedEvents.push(id);
         await saveJoinedEvents();
-        renderBoard();
+        renderCalendar();
       });
     });
   }
@@ -1807,7 +1809,6 @@
   let boardScope = 'global';
   async function renderBoard(){
     const el = document.getElementById('board-content');
-    await loadJoinedEvents();
 
     el.innerHTML = `
       <div class="board-toggle">
@@ -1815,7 +1816,7 @@
         <button class="toggle-btn ${boardScope==='friends'?'active':''}" data-scope="friends">Friends</button>
       </div>
       <div id="board-list"><div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div></div>
-    ` + eventsSectionHtml();
+    `;
     el.querySelectorAll('.toggle-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         if(boardScope === btn.dataset.scope) return;
@@ -1823,7 +1824,6 @@
         renderBoard();
       });
     });
-    bindEventButtons();
     emojify(el);
 
     const listEl = document.getElementById('board-list');

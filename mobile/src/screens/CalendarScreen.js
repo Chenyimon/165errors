@@ -2,11 +2,15 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Image, StyleSheet, ActivityIndicator, Modal, FlatList } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 
-import { colors } from '../theme';
+import { colors, radius } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
 import { getMyPosts, imageSource } from '../lib/api';
+import { EVENTS } from '../lib/content';
+import { getJoinedEvents, setJoinedEvents } from '../lib/eventsStore';
 import AppHeader from '../components/AppHeader';
 import PostCard from '../components/PostCard';
+import Button from '../components/Button';
+import Emoji from '../components/Emoji';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -24,6 +28,7 @@ export default function CalendarScreen() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedKey, setSelectedKey] = useState(null);
+  const [joined, setJoined] = useState([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,8 +38,15 @@ export default function CalendarScreen() {
     } catch (e) {
       console.warn('my posts load failed', e);
     }
+    setJoined(await getJoinedEvents());
     setLoading(false);
   }, [guestTag]);
+
+  const toggleEvent = async (id) => {
+    const next = joined.includes(id) ? joined.filter((x) => x !== id) : [...joined, id];
+    setJoined(next);
+    await setJoinedEvents(next);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -160,6 +172,32 @@ export default function CalendarScreen() {
             })}
           </View>
         )}
+
+        <Text style={[styles.title, { marginTop: 26 }]}>Upcoming events</Text>
+        {EVENTS.map((ev) => {
+          const isJoined = joined.includes(ev.id);
+          return (
+            <View key={ev.id} style={styles.eventCard}>
+              <Text style={styles.eventTitle}>{ev.title}</Text>
+              <View style={styles.eventMetaRow}>
+                <Emoji symbol="📅" size={12} style={{ marginRight: 5 }} />
+                <Text style={styles.eventMeta}>{ev.date}</Text>
+              </View>
+              <View style={styles.eventMetaRow}>
+                <Emoji symbol="📍" size={12} style={{ marginRight: 5 }} />
+                <Text style={styles.eventMeta}>
+                  {ev.location} · {ev.spots} spots
+                </Text>
+              </View>
+              <Button
+                title={isJoined ? 'Joined ✓' : 'Join'}
+                variant={isJoined ? 'outline' : 'primary'}
+                onPress={() => toggleEvent(ev.id)}
+                style={{ marginTop: 10, alignSelf: 'flex-start' }}
+              />
+            </View>
+          );
+        })}
       </ScrollView>
 
       <Modal visible={!!selectedKey} animationType="slide" transparent onRequestClose={() => setSelectedKey(null)}>
@@ -194,6 +232,22 @@ const styles = StyleSheet.create({
     color: colors.inkDim,
     marginBottom: 18,
   },
+  eventCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
+    padding: 14,
+    marginBottom: 10,
+    shadowColor: '#2C4736',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  eventTitle: { fontWeight: '700', fontSize: 14, color: colors.ink, marginBottom: 4 },
+  eventMetaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  eventMeta: { fontSize: 12, color: colors.inkDim },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   navBtn: {
     width: 34,
