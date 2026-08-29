@@ -76,6 +76,21 @@ def main() -> None:
 
     conn = sqlite3.connect(DB)
 
+    # Collect the photos belonging to the posts we are about to remove. Avatars
+    # live in the same folder, so deleting the folder's contents wholesale takes
+    # people's profile pictures with it - which is exactly what happened once.
+    post_images = [
+        r[0] for r in conn.execute(
+            "SELECT image_path FROM posts WHERE image_path IS NOT NULL"
+        ).fetchall()
+    ]
+    # Only orphaned when the accounts themselves go.
+    avatar_images = [
+        r[0] for r in conn.execute(
+            "SELECT avatar_path FROM profiles WHERE avatar_path IS NOT NULL"
+        ).fetchall()
+    ] if mode == "all" else []
+
     if who is not None:
         clear_one_user(conn, who)
         conn.commit()
@@ -106,12 +121,24 @@ def main() -> None:
     conn.close()
 
     removed = 0
-    if UPLOADS.exists():
-        for f in UPLOADS.iterdir():
-            if f.is_file() and not f.name.startswith("."):
-                f.unlink()
-                removed += 1
-    print(f"  deleted {removed} uploaded photo(s)")
+    for name in post_images:
+        f = UPLOADS / name
+        if f.is_file():
+            f.unlink()
+            removed += 1
+    print(f"  deleted {removed} post photo(s)")
+
+    avatars_removed = 0
+    for name in avatar_images:
+        f = UPLOADS / name
+        if f.is_file():
+            f.unlink()
+            avatars_removed += 1
+
+    if mode == "all":
+        print(f"  deleted {avatars_removed} profile picture(s) - their accounts are gone")
+    else:
+        print("  profile pictures left alone")
 
     print("\nDone. Restart the server so it picks up the empty database.")
 
