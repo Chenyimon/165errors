@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme';
 import { useFriendsModal } from '../lib/FriendsModalContext';
 import Emoji from './Emoji';
+import EdMark from './EdMark';
 
 export default function AppHeader() {
   const insets = useSafeAreaInsets();
@@ -12,9 +13,12 @@ export default function AppHeader() {
 
   return (
     <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-      <Text style={styles.wordmark}>
-        SORT<Text style={styles.slash}>/</Text>ED
-      </Text>
+      <View style={styles.brand}>
+        <EdMark size={26} />
+        <Text style={styles.wordmark}>
+          SORT<Text style={styles.slash}>/</Text>ED
+        </Text>
+      </View>
       <Pressable style={styles.friendsBtn} onPress={open} accessibilityLabel="Friends">
         <Emoji symbol="👥" size={16} />
       </Pressable>
@@ -33,6 +37,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
   },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wordmark: { fontWeight: '800', fontSize: 20, color: colors.forest },
   slash: { color: colors.terracotta },
   friendsBtn: {

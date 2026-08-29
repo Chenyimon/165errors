@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Image, ActivityIndicator, StyleSheet, Pressable, TextInput } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 
@@ -61,6 +61,7 @@ export default function ScanScreen() {
   const [posting, setPosting] = useState(false);
   const [checkedTips, setCheckedTips] = useState([]);
   const [unclearUri, setUnclearUri] = useState(null);
+  const [captionText, setCaptionText] = useState('');
 
   async function startScan() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -103,10 +104,11 @@ export default function ScanScreen() {
         weightG,
         co2G,
         points,
-        funFact: result.fun_fact || '',
+        aiFunFact: result.fun_fact || '',
         imageUri: resizedUri,
       });
       setCheckedTips((PREP_TIPS[category] || []).map(() => false));
+      setCaptionText('');
       clearInterval(msgTimer);
       setStage('review');
     } catch (err) {
@@ -121,6 +123,7 @@ export default function ScanScreen() {
     setPending(null);
     setCheckedTips([]);
     setUnclearUri(null);
+    setCaptionText('');
     setStage('idle');
   }
 
@@ -157,7 +160,7 @@ export default function ScanScreen() {
         weightG: pending.weightG,
         co2G: pending.co2G,
         points: finalPoints,
-        funFact: pending.funFact,
+        funFact: captionText.trim(),
         imageUri: pending.imageUri,
         mediaType: 'image/jpeg',
         guestTag,
@@ -251,14 +254,16 @@ export default function ScanScreen() {
                     <Text style={styles.statLbl}>Points</Text>
                   </View>
                 </View>
-                {pending.funFact ? (
-                  <View style={styles.fact}>
-                    <Text style={styles.factText}>
-                      <Text style={{ fontWeight: '700', color: colors.ink }}>Did you know: </Text>
-                      {pending.funFact}
-                    </Text>
-                  </View>
-                ) : null}
+                <Text style={styles.prepLabel}>Add a caption</Text>
+                <TextInput
+                  style={styles.captionInput}
+                  value={captionText}
+                  onChangeText={setCaptionText}
+                  placeholder={pending.aiFunFact || 'Say something about this...'}
+                  placeholderTextColor={colors.inkDim}
+                  multiline
+                  maxLength={280}
+                />
 
                 {(PREP_TIPS[pending.category] || []).length > 0 && (
                   <>
@@ -369,6 +374,18 @@ const styles = StyleSheet.create({
   statLbl: { fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, color: colors.inkDim, marginTop: 2 },
   fact: { backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: radius.sm },
   factText: { fontSize: 12.5, color: colors.inkDim, lineHeight: 18 },
+  captionInput: {
+    minHeight: 64,
+    padding: 12,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+    color: colors.ink,
+    fontSize: 13.5,
+    lineHeight: 18,
+    textAlignVertical: 'top',
+  },
   actions: { flexDirection: 'row', gap: 10, marginTop: 18 },
   postingStatus: {
     flexDirection: 'row',
