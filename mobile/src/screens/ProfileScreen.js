@@ -1,9 +1,12 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Pressable, Linking } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, Pressable, Linking, Image, ActivityIndicator } from 'react-native';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 
 import { colors, radius } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
+import { imageSource, getMedals } from '../lib/api';
+import { prepareAvatarForUpload } from '../lib/imagePrep';
 import { IMPACT } from '../lib/impact';
 import { computeBadges, nextMilestone } from '../lib/profileStore';
 import { CHALLENGES, SPONSOR_CHALLENGES, BINS, metricValue, haversineKm } from '../lib/content';
@@ -12,10 +15,65 @@ import AppHeader from '../components/AppHeader';
 import Button from '../components/Button';
 import Emoji from '../components/Emoji';
 
+const MEDAL_EMOJI = { 1: '🥇', 2: '🥈', 3: '🥉' };
+const MEDAL_COLOR = { 1: '#D4A017', 2: '#9AA5B1', 3: '#B8722D' };
+
+function monthLabel(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
 export default function ProfileScreen() {
-  const { profile, authed, logout } = useProfile();
+  const { profile, authed, logout, changeAvatar, guestTag } = useProfile();
   const [binResults, setBinResults] = useState(null);
   const [locating, setLocating] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [tab, setTab] = useState('overview');
+  const [medals, setMedals] = useState([]);
+  const [medalsLoading, setMedalsLoading] = useState(false);
+
+  useEffect(() => {
+    if (tab !== 'medals') return;
+    let cancelled = false;
+    setMedalsLoading(true);
+    getMedals(guestTag)
+      .then((data) => {
+        if (!cancelled) setMedals(data);
+      })
+      .catch(() => {
+        if (!cancelled) setMedals([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMedalsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, guestTag]);
+
+  async function pickAvatar() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      showToast('Photo library access is needed to set a profile picture');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (result.canceled || !result.assets?.length) return;
+    setUploadingAvatar(true);
+    try {
+      const { uri, mediaType } = await prepareAvatarForUpload(result.assets[0].uri);
+      await changeAvatar(uri, mediaType);
+      showToast('Profile photo updated');
+    } catch (e) {
+      showToast("Couldn't update photo — try again");
+    }
+    setUploadingAvatar(false);
+  }
 
   const badges = useMemo(() => computeBadges(profile), [profile]);
   const cats = useMemo(
@@ -23,7 +81,6 @@ export default function ProfileScreen() {
     [profile.byCategory]
   );
   const maxCat = cats.length ? cats[0][1] : 1;
-  const ringPct = Math.min(100, Math.round((Math.min(profile.currentStreak, 7) / 7) * 100));
   const goal = nextMilestone(profile.totalPoints);
   const goalPct = Math.min(100, Math.round((profile.totalPoints / goal) * 100));
 
@@ -54,6 +111,20 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Your impact</Text>
         <View style={styles.heroBlock}>
+          <View style={styles.avatarWrap}>
+            {profile.avatarUrl ? (
+              <Image source={imageSource(profile.avatarUrl)} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.avatarInitial}>{(profile.username || '?').trim().charAt(0).toUpperCase()}</Text>
+              </View>
+            )}
+            {authed ? (
+              <Pressable style={styles.avatarEditBtn} onPress={pickAvatar} disabled={uploadingAvatar}>
+                <Emoji symbol="📷" size={13} />
+              </Pressable>
+            ) : null}
+          </View>
           <Text style={styles.name}>{profile.username || 'Guest'}</Text>
           {!authed ? (
             <Text style={styles.guestNote}>
@@ -65,29 +136,46 @@ export default function ProfileScreen() {
           ) : null}
         </View>
 
-        <View style={styles.streakCard}>
-          <View style={styles.streakTop}>
-            <View style={styles.streakIcon}>
-              <Emoji symbol="🔥" size={20} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.streakTitle}>{profile.currentStreak > 0 ? 'Growing steady' : 'Ready to start'}</Text>
-              <Text style={styles.streakSub}>
-                {profile.currentStreak > 0
-                  ? `You're on a ${profile.currentStreak}-day streak. Longest run so far: ${profile.longestStreak} days.`
-                  : 'Scan an item today to start your streak.'}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.streakTrack}>
-            <View style={[styles.streakFill, { width: `${ringPct}%` }]} />
-          </View>
-          <View>
-            <Text style={styles.streakBig}>{profile.currentStreak}</Text>
-            <Text style={styles.streakCap}>DAY STREAK</Text>
-          </View>
+        <View style={styles.pointsHero}>
+          <Text style={styles.pointsHeroLabel}>Total points</Text>
+          <Text style={styles.pointsHeroNum}>{profile.totalPoints}</Text>
+          <Text style={styles.pointsHeroSub}>Lifetime impact across every scan.</Text>
         </View>
 
+        <View style={styles.toggleRow}>
+          <Pressable style={[styles.toggleBtn, tab === 'overview' && styles.toggleBtnActive]} onPress={() => setTab('overview')}>
+            <Text style={[styles.toggleText, tab === 'overview' && styles.toggleTextActive]}>Overview</Text>
+          </Pressable>
+          <Pressable style={[styles.toggleBtn, tab === 'medals' && styles.toggleBtnActive]} onPress={() => setTab('medals')}>
+            <Text style={[styles.toggleText, tab === 'medals' && styles.toggleTextActive]}>Medals</Text>
+          </Pressable>
+        </View>
+
+        {tab === 'medals' ? (
+          medalsLoading ? (
+            <ActivityIndicator color={colors.forest} style={{ marginTop: 30 }} />
+          ) : medals.length === 0 ? (
+            <View style={styles.empty}>
+              <Emoji symbol="🏅" size={34} style={styles.emptyBig} />
+              <Text style={styles.emptyText}>No medals yet.{'\n'}Finish top 3 in a month to earn one.</Text>
+            </View>
+          ) : (
+            medals.map((m) => (
+              <View key={m.month} style={styles.milestoneRow}>
+                <View style={[styles.milestoneBadge, { backgroundColor: MEDAL_COLOR[m.rank] }]}>
+                  <Emoji symbol={MEDAL_EMOJI[m.rank]} size={18} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.milestoneTitle}>{monthLabel(m.month)}</Text>
+                  <Text style={styles.milestoneSub}>
+                    #{m.rank} place · {m.points} points
+                  </Text>
+                </View>
+              </View>
+            ))
+          )
+        ) : (
+          <>
         <View style={styles.grid}>
           <View style={styles.card}>
             <Text style={styles.num}>{profile.totalPoints}</Text>
@@ -96,10 +184,6 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <Text style={[styles.num, styles.accent]}>{profile.totalScans}</Text>
             <Text style={styles.lbl}>Items sorted</Text>
-          </View>
-          <View style={styles.card}>
-            <Text style={styles.num}>{profile.currentStreak}</Text>
-            <Text style={styles.lbl}>Current streak</Text>
           </View>
           <View style={styles.card}>
             <Text style={[styles.num, styles.accent]}>{profile.longestStreak}</Text>
@@ -236,6 +320,8 @@ export default function ProfileScreen() {
             </>
           )}
         </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -252,7 +338,24 @@ const styles = StyleSheet.create({
     color: colors.inkDim,
     marginBottom: 18,
   },
-  heroBlock: { marginBottom: 22 },
+  heroBlock: { marginBottom: 22, alignItems: 'center' },
+  avatarWrap: { width: 88, height: 88, marginBottom: 12 },
+  avatar: { width: 88, height: 88, borderRadius: 44 },
+  avatarFallback: { backgroundColor: colors.sage, alignItems: 'center', justifyContent: 'center' },
+  avatarInitial: { fontWeight: '700', fontSize: 32, color: colors.forest },
+  avatarEditBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.forest,
+    borderWidth: 2,
+    borderColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   name: { fontWeight: '700', fontSize: 22, color: colors.ink, textAlign: 'center' },
   guestNote: {
     fontSize: 12.5,
@@ -262,41 +365,46 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   guestLink: { color: colors.forest, fontWeight: '700' },
-  streakCard: {
+  pointsHero: {
     backgroundColor: colors.forest,
     borderRadius: radius.lg,
-    padding: 22,
+    padding: 26,
     marginBottom: 22,
+    alignItems: 'center',
     shadowColor: '#20362A',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.28,
     shadowRadius: 16,
     elevation: 6,
   },
-  streakTop: { flexDirection: 'row', gap: 14, alignItems: 'center', marginBottom: 16 },
-  streakIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.forestDeep,
+  pointsHeroLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    color: 'rgba(255,255,255,0.65)',
+  },
+  pointsHeroNum: { fontWeight: '800', fontSize: 44, color: '#fff', marginTop: 4 },
+  pointsHeroSub: { fontSize: 12.5, color: 'rgba(255,255,255,0.72)', marginTop: 8, textAlign: 'center' },
+  toggleRow: { flexDirection: 'row', gap: 8, marginBottom: 18 },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  streakTitle: { fontWeight: '700', fontSize: 16, color: '#fff', marginBottom: 4 },
-  streakSub: { fontSize: 12.5, color: 'rgba(255,255,255,0.72)', lineHeight: 18 },
-  streakTrack: {
-    height: 8,
-    borderRadius: 5,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  streakFill: { height: '100%', backgroundColor: colors.sun, borderRadius: 5 },
-  streakBig: { fontWeight: '800', fontSize: 32, color: '#fff' },
-  streakCap: { fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginTop: 2 },
+  toggleBtnActive: { backgroundColor: colors.forest, borderColor: colors.forest },
+  toggleText: { fontWeight: '700', fontSize: 12.5, textTransform: 'uppercase', letterSpacing: 0.4, color: colors.inkDim },
+  toggleTextActive: { color: '#fff' },
+  empty: { alignItems: 'center', paddingVertical: 50 },
+  emptyBig: { marginBottom: 10 },
+  emptyText: { fontSize: 13, lineHeight: 20, color: colors.inkDim, textAlign: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   card: {
-    width: '47%',
+    width: '31%',
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,

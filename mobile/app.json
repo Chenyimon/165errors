@@ -16,11 +16,12 @@
       "supportsTablet": false,
       "infoPlist": {
         "NSCameraUsageDescription": "SORT/ED needs camera access to photograph items you're recycling.",
+        "NSPhotoLibraryUsageDescription": "SORT/ED needs photo library access to set your profile picture.",
         "NSLocationWhenInUseUsageDescription": "SORT/ED uses your location to find nearby recycling bins."
       }
     },
     "android": {
-      "permissions": ["CAMERA", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E7A94C"
@@ -30,7 +31,8 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": "SORT/ED needs camera access to photograph items you're recycling."
+          "cameraPermission": "SORT/ED needs camera access to photograph items you're recycling.",
+          "photosPermission": "SORT/ED needs photo library access to set your profile picture."
         }
       ],
       [

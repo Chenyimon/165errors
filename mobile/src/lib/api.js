@@ -80,6 +80,13 @@ export async function getLeaderboard(scope) {
   return res.json();
 }
 
+export async function getMedals(guestTag) {
+  const qs = !authToken && guestTag ? `?guest_tag=${encodeURIComponent(guestTag)}` : '';
+  const res = await fetch(`${API_BASE}/api/medals${qs}`, { headers: requestHeaders() });
+  if (!res.ok) throw new Error('medals fetch failed: ' + res.status);
+  return res.json();
+}
+
 export async function getFriends() {
   const res = await fetch(`${API_BASE}/api/friends`, { headers: authHeaders() });
   if (!res.ok) throw new Error('friends fetch failed: ' + res.status);
@@ -139,6 +146,22 @@ export async function createPost({ category, itemName, weightG, co2G, points, fu
     body: form,
   });
   if (!res.ok) throw new Error('post failed: ' + res.status);
+  return res.json();
+}
+
+export async function uploadAvatar(uri, mediaType) {
+  const form = new FormData();
+  form.append('image', {
+    uri,
+    name: mediaType === 'image/png' ? 'avatar.png' : 'avatar.jpg',
+    type: mediaType,
+  });
+  const res = await fetch(`${API_BASE}/api/profile/avatar`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: form,
+  });
+  if (!res.ok) throw new Error('avatar upload failed: ' + res.status);
   return res.json();
 }
 

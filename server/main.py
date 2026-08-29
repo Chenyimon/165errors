@@ -143,6 +143,7 @@ DEFAULT_PROFILE = {
     "lastScanDate": None,
     "totalScans": 0,
     "byCategory": {},
+    "avatarUrl": None,
 }
 
 
@@ -154,6 +155,7 @@ def row_to_profile(row) -> dict:
         "lastScanDate": row["last_scan_date"],
         "totalScans": row["total_scans"],
         "byCategory": json.loads(row["by_category"] or "{}"),
+        "avatarUrl": f"/uploads/{row['avatar_path']}" if row["avatar_path"] else None,
     }
 
 
@@ -284,31 +286,122 @@ def put_my_profile(
     return {"ok": True}
 
 
+@app.post("/api/profile/avatar")
+async def upload_avatar(
+    image: UploadFile = File(...),
+    username: str = Depends(get_current_username),
+    x_app_secret: Optional[str] = Header(default=None),
+):
+    check_secret(x_app_secret)
+    if image.content_type not in VALID_MEDIA_TYPES:
+        raise HTTPException(status_code=400, detail="unsupported media type")
+
+    ext = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}[image.content_type]
+    filename = f"avatar-{username}-{uuid.uuid4().hex[:8]}{ext}"
+    contents = await image.read()
+
+    with get_conn() as conn:
+        conn.execute("INSERT OR IGNORE INTO profiles (username) VALUES (?)", (username,))
+        old_row = conn.execute("SELECT avatar_path FROM profiles WHERE username = ?", (username,)).fetchone()
+        old_path = old_row["avatar_path"] if old_row else None
+        conn.execute("UPDATE profiles SET avatar_path = ? WHERE username = ?", (filename, username))
+
+    (UPLOAD_DIR / filename).write_bytes(contents)
+    if old_path:
+        try:
+            (UPLOAD_DIR / old_path).unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    return {"avatarUrl": f"/uploads/{filename}"}
+
+
 # ---------- Leaderboard ----------
+# The board resets every calendar month — both queries below only sum a post's
+# points if it happened in the current month, so scores naturally zero out on
+# the 1st. Past months' standings are recoverable (see /api/medals) since
+# they're derived from ts, not from a mutable running total.
+CURRENT_MONTH_FILTER = "strftime('%Y-%m', ts/1000, 'unixepoch') = strftime('%Y-%m', 'now')"
+
+
 @app.get("/api/leaderboard")
 def leaderboard():
     with get_conn() as conn:
         rows = conn.execute(
-            "SELECT username, total_points FROM profiles ORDER BY total_points DESC LIMIT 100"
+            f"""
+            SELECT p.username AS username, SUM(p.points) AS points, MAX(p.is_guest) AS is_guest,
+                   pr.avatar_path AS avatar_path
+            FROM posts p
+            LEFT JOIN profiles pr ON pr.username = p.username
+            WHERE {CURRENT_MONTH_FILTER}
+            GROUP BY p.username
+            ORDER BY points DESC
+            LIMIT 100
+            """
         ).fetchall()
-    return [{"username": r["username"], "points": r["total_points"]} for r in rows]
+    return [
+        {
+            "username": r["username"],
+            "points": r["points"],
+            "isGuest": bool(r["is_guest"]),
+            "avatarUrl": f"/uploads/{r['avatar_path']}" if r["avatar_path"] else None,
+        }
+        for r in rows
+    ]
 
 
 @app.get("/api/leaderboard/friends")
 def friends_leaderboard(username: str = Depends(get_current_username)):
     with get_conn() as conn:
         rows = conn.execute(
-            """
-            SELECT p.username AS username, p.total_points AS total_points
-            FROM profiles p
-            WHERE p.username = ? OR p.username IN (
+            f"""
+            WITH monthly AS (
+                SELECT username, SUM(points) AS points
+                FROM posts
+                WHERE {CURRENT_MONTH_FILTER}
+                GROUP BY username
+            )
+            SELECT m.username AS username, m.points AS points
+            FROM monthly m
+            WHERE m.username = ? OR m.username IN (
                 SELECT friend_username FROM friends WHERE username = ?
             )
-            ORDER BY p.total_points DESC
+            ORDER BY m.points DESC
             """,
             (username, username),
         ).fetchall()
-    return [{"username": r["username"], "points": r["total_points"]} for r in rows]
+    return [{"username": r["username"], "points": r["points"]} for r in rows]
+
+
+@app.get("/api/medals")
+def my_medals(guest_tag: Optional[str] = None, username: Optional[str] = Depends(get_optional_username)):
+    """Every past (already-finished) calendar month where this identity placed
+    top 3, derived on the fly from posts — there's no separate table to keep in
+    sync, so this is always consistent with the leaderboard above."""
+    identity = username or guest_display_name(guest_tag)
+    if not identity:
+        return []
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            WITH monthly AS (
+                SELECT strftime('%Y-%m', ts/1000, 'unixepoch') AS month, username, SUM(points) AS points
+                FROM posts
+                GROUP BY month, username
+            ),
+            ranked AS (
+                SELECT month, username, points,
+                       RANK() OVER (PARTITION BY month ORDER BY points DESC) AS rnk
+                FROM monthly
+            )
+            SELECT month, points, rnk
+            FROM ranked
+            WHERE username = ? AND rnk <= 3 AND month < strftime('%Y-%m', 'now')
+            ORDER BY month DESC
+            """,
+            (identity,),
+        ).fetchall()
+    return [{"month": r["month"], "points": r["points"], "rank": r["rnk"]} for r in rows]
 
 
 # ---------- Friends ----------
@@ -386,6 +479,10 @@ def _enrich_post(conn, r, viewer: Optional[str]) -> dict:
                 "SELECT 1 FROM likes WHERE post_id = ? AND username = ?", (r["id"], viewer)
             ).fetchone()
         )
+    avatar_row = conn.execute(
+        "SELECT avatar_path FROM profiles WHERE username = ?", (r["username"],)
+    ).fetchone()
+    avatar_url = f"/uploads/{avatar_row['avatar_path']}" if avatar_row and avatar_row["avatar_path"] else None
     return {
         "id": r["id"],
         "ts": r["ts"],
@@ -397,6 +494,7 @@ def _enrich_post(conn, r, viewer: Optional[str]) -> dict:
         "points": r["points"],
         "funFact": r["fun_fact"],
         "imageUrl": f"/uploads/{r['image_path']}" if r["image_path"] else None,
+        "avatarUrl": avatar_url,
         "isGuest": bool(r["is_guest"]),
         "likeCount": like_count,
         "commentCount": comment_count,

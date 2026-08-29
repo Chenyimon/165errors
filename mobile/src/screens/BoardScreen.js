@@ -12,7 +12,8 @@ import Button from '../components/Button';
 import Emoji from '../components/Emoji';
 
 export default function BoardScreen() {
-  const { profile, authed, logout } = useProfile();
+  const { profile, authed, logout, guestTag } = useProfile();
+  const myDisplayName = profile.username || (guestTag ? `Guest ${guestTag}` : null);
   const [scope, setScope] = useState('global');
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +57,7 @@ export default function BoardScreen() {
       <AppHeader />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Leaderboard</Text>
+        <Text style={styles.subtitle}>Resets every month · Top 3 win a medal</Text>
 
         <View style={styles.toggleRow}>
           <Pressable
@@ -90,16 +92,20 @@ export default function BoardScreen() {
             </Text>
           </View>
         ) : (
-          entries.map((item, index) => (
-            <View key={item.username} style={[styles.row, item.username === profile.username && styles.rowMe]}>
-              <Text style={styles.rank}>{index + 1}</Text>
-              <Text style={styles.name}>
-                {item.username}
-                {item.username === profile.username ? ' (you)' : ''}
-              </Text>
-              <Text style={styles.pts}>{item.points}</Text>
-            </View>
-          ))
+          entries.map((item, index) => {
+            const mine = !!myDisplayName && item.username === myDisplayName;
+            return (
+              <View key={item.username} style={[styles.row, mine && styles.rowMe]}>
+                <Text style={styles.rank}>{index + 1}</Text>
+                <Text style={styles.name}>
+                  {item.username}
+                  {item.isGuest ? ' · Guest' : ''}
+                  {mine ? ' (you)' : ''}
+                </Text>
+                <Text style={styles.pts}>{item.points}</Text>
+              </View>
+            );
+          })
         )}
 
         <Text style={[styles.title, { marginTop: 26 }]}>Upcoming events</Text>
@@ -143,6 +149,7 @@ const styles = StyleSheet.create({
     color: colors.inkDim,
     marginBottom: 18,
   },
+  subtitle: { fontSize: 12.5, color: colors.inkDim, marginTop: -12, marginBottom: 16 },
   toggleRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   toggleBtn: {
     flex: 1,

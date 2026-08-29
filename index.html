@@ -220,6 +220,7 @@
   .post-avatar{
     width:36px; height:36px; border-radius:50%; background:var(--forest); color:#fff;
     display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0;
+    object-fit:cover;
   }
   .post-who{flex:1; min-width:0;}
   .post-name{font-weight:700; font-size:13.5px; color:var(--ink);}
@@ -402,32 +403,31 @@
   /* ---------- Profile ---------- */
   .profile-hero{text-align:center; padding:10px 0 22px;}
   .profile-name{font-family:'Fraunces',serif; font-weight:700; font-size:22px; color:var(--ink);}
+  .profile-avatar-wrap{position:relative; width:88px; height:88px; margin:0 auto 14px;}
+  .profile-avatar{
+    width:88px; height:88px; border-radius:50%; object-fit:cover; display:flex;
+    align-items:center; justify-content:center; background:var(--sage); color:var(--forest);
+    font-family:'Fraunces',serif; font-weight:700; font-size:32px; border:3px solid var(--surface);
+    box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 10px 24px rgba(44,71,54,0.08);
+  }
+  .profile-avatar-edit{
+    position:absolute; bottom:0; right:0; width:30px; height:30px; border-radius:50%;
+    background:var(--forest); border:2px solid var(--surface); display:flex; align-items:center;
+    justify-content:center; cursor:pointer; font-size:14px;
+  }
 
-  /* Weekly-streak style card */
-  .streak-card{
+  /* Points hero */
+  .points-hero{
     background:var(--forest); border-radius:var(--radius);
-    padding:22px; color:#fff; margin-bottom:22px;
+    padding:26px 22px; color:#fff; margin-bottom:22px; text-align:center;
     box-shadow:0 10px 24px rgba(32,54,42,0.28);
   }
-  .streak-top{display:flex; gap:14px; align-items:center; margin-bottom:20px;}
-  .streak-ring{
-    width:60px; height:60px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-  }
-  .streak-ring-inner{
-    width:44px; height:44px; border-radius:50%;
-    background:var(--forest-deep);
-    display:flex; align-items:center; justify-content:center;
-    font-size:19px;
-  }
-  .streak-title{font-family:'Fraunces',serif; font-weight:600; font-size:16px; margin-bottom:4px;}
-  .streak-sub{font-size:12.5px; color:rgba(255,255,255,0.72); line-height:1.5;}
-  .streak-bottom .big{font-family:'Nunito',sans-serif; font-weight:800; font-size:32px;}
-  .streak-bottom .cap{display:block; font-size:10px; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.6); margin-top:2px;}
+  .points-hero-label{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:rgba(255,255,255,0.65);}
+  .points-hero-num{font-family:'Fraunces',serif; font-weight:700; font-size:48px; line-height:1.15; margin-top:4px;}
+  .points-hero-sub{font-size:12.5px; color:rgba(255,255,255,0.72); margin-top:8px; line-height:1.5;}
 
   .profile-grid{
-    display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px;
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:24px;
   }
   .profile-card{
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
@@ -643,6 +643,7 @@
     <!-- LEADERBOARD VIEW -->
     <section class="view" id="view-board">
       <h1 class="view-title">Leaderboard</h1>
+      <p style="color:var(--ink-dim); font-size:12.5px; margin:-14px 0 18px;">Resets every month · Top 3 win a medal</p>
       <div id="board-content"></div>
     </section>
 
@@ -938,6 +939,18 @@
     }
     try{ await STORAGE.set('guestProfile', JSON.stringify(profile), false); }
     catch(e){ console.error('save guest profile failed', e); }
+  }
+  async function uploadAvatar(file){
+    const dataUrl = await compressImage(file, 480, 0.85);
+    const blob = await (await fetch(dataUrl)).blob();
+    const form = new FormData();
+    form.append('image', blob, 'avatar.jpg');
+    const res = await fetch(API_ENDPOINT + '/api/profile/avatar', {
+      method:'POST', headers: authHeaders(), body: form
+    });
+    if(!res.ok) throw new Error('avatar upload failed');
+    const data = await res.json();
+    profile.avatarUrl = data.avatarUrl;
   }
   async function loadLeaderboard(scope){
     try{
@@ -1392,7 +1405,10 @@
     const initial = (p.username||'?').trim().charAt(0).toUpperCase();
     return `<div class="post-card">
       <div class="post-header">
-        <div class="post-avatar">${initial}</div>
+        ${p.avatarUrl
+          ? `<img class="post-avatar" data-src="${postImageUrl(p.avatarUrl)}" alt="">`
+          : `<div class="post-avatar">${initial}</div>`
+        }
         <div class="post-who">
           <div class="post-name">${escapeHtml(p.username||'Someone')}${p.isGuest ? ' <span class="guest-tag">Guest</span>' : ''}</div>
           <div class="post-time">${timeAgo(p.ts)}</div>
@@ -1644,7 +1660,7 @@
       </div>
       <div id="board-list"><div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div></div>
     ` + eventsSectionHtml();
-    document.querySelectorAll('.toggle-btn').forEach(btn=>{
+    el.querySelectorAll('.toggle-btn').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         if(boardScope === btn.dataset.scope) return;
         boardScope = btn.dataset.scope;
@@ -1671,13 +1687,17 @@
       emojify(listEl);
       return;
     }
-    listEl.innerHTML = entries.map((e,i)=>`
-      <div class="lb-row ${e.username===profile.username?'me':''}">
+    listEl.innerHTML = entries.map((e,i)=>{
+      const mine = isMyPost({username: e.username});
+      return `
+      <div class="lb-row ${mine ? 'me' : ''}">
         <div class="lb-rank">${i+1}</div>
-        <div class="lb-name">${escapeHtml(e.username)}${e.username===profile.username?' (you)':''}</div>
+        <div class="lb-name">${escapeHtml(e.username)}${e.isGuest ? ' <span class="guest-tag">Guest</span>' : ''}${mine ? ' (you)' : ''}</div>
         <div class="lb-pts">${e.points}</div>
       </div>
-    `).join('');
+    `;
+    }).join('');
+    emojify(listEl);
   }
 
   // ---------- Profile ----------
@@ -1773,17 +1793,20 @@
     });
   }
 
-  function renderProfile(){
-    const el = document.getElementById('profile-content');
-    const badges = computeBadges();
-    const cats = Object.entries(profile.byCategory).sort((a,b)=>b[1]-a[1]);
-    const maxCat = cats.length ? cats[0][1] : 1;
-    const ringPct = Math.round((Math.min(profile.currentStreak,7)/7)*100);
-    const nextGoal = nextMilestone(profile.totalPoints);
-    const goalPct = Math.min(100, Math.round((profile.totalPoints/nextGoal)*100));
+  let profileTab = 'overview';
 
+  async function renderProfile(){
+    const el = document.getElementById('profile-content');
     el.innerHTML = `
       <div class="profile-hero">
+        <div class="profile-avatar-wrap">
+          ${profile.avatarUrl
+            ? `<img class="profile-avatar" data-src="${postImageUrl(profile.avatarUrl)}" alt="">`
+            : `<div class="profile-avatar">${escapeHtml((profile.username||'?').trim().charAt(0).toUpperCase())}</div>`
+          }
+          ${session.token ? `<button class="profile-avatar-edit" id="avatar-edit-btn" type="button" title="Change photo">📷</button>` : ''}
+        </div>
+        <input type="file" id="avatar-file-input" accept="image/*" hidden>
         <div class="profile-name">${profile.username ? escapeHtml(profile.username) : 'Guest'}</div>
         ${!session.token ? `
           <p style="color:var(--ink-dim); font-size:12.5px; margin:6px 0 0;">
@@ -1793,26 +1816,67 @@
         ` : ''}
       </div>
 
-      <div class="streak-card">
-        <div class="streak-top">
-          <div class="streak-ring" style="background:conic-gradient(var(--sun) 0% ${ringPct}%, rgba(255,255,255,0.2) ${ringPct}% 100%)">
-            <div class="streak-ring-inner">🔥</div>
-          </div>
-          <div class="streak-copy">
-            <div class="streak-title">${profile.currentStreak>0 ? 'Growing steady' : 'Ready to start'}</div>
-            <div class="streak-sub">${profile.currentStreak>0 ? `You're on a ${profile.currentStreak}-day streak. Longest run so far: ${profile.longestStreak} days.` : 'Scan an item today to start your streak.'}</div>
-          </div>
-        </div>
-        <div class="streak-bottom">
-          <span class="big">${profile.currentStreak}</span>
-          <span class="cap">Day streak</span>
-        </div>
+      <div class="points-hero">
+        <div class="points-hero-label">Total points</div>
+        <div class="points-hero-num">${profile.totalPoints}</div>
+        <div class="points-hero-sub">Lifetime impact across every scan.</div>
       </div>
 
+      <div class="board-toggle">
+        <button class="toggle-btn ${profileTab==='overview'?'active':''}" data-profile-tab="overview" type="button">Overview</button>
+        <button class="toggle-btn ${profileTab==='medals'?'active':''}" data-profile-tab="medals" type="button">Medals</button>
+      </div>
+      <div id="profile-tab-content"></div>
+    `;
+    emojify(el);
+    hydrateImages(el);
+
+    const loginBtn = document.getElementById('profile-login-btn');
+    if(loginBtn) loginBtn.addEventListener('click', showAuthView);
+
+    if(session.token){
+      const fileInput = document.getElementById('avatar-file-input');
+      document.getElementById('avatar-edit-btn').addEventListener('click', ()=> fileInput.click());
+      fileInput.addEventListener('change', async (e)=>{
+        const file = e.target.files[0];
+        e.target.value = '';
+        if(!file) return;
+        try{
+          showToast('Updating photo…');
+          await uploadAvatar(file);
+          renderProfile();
+          showToast('Profile photo updated');
+        }catch(err){
+          console.error(err);
+          showToast("Couldn't update photo — try again");
+        }
+      });
+    }
+
+    el.querySelectorAll('[data-profile-tab]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        if(profileTab === btn.dataset.profileTab) return;
+        profileTab = btn.dataset.profileTab;
+        renderProfile();
+      });
+    });
+
+    if(profileTab === 'medals') await renderProfileMedals();
+    else renderProfileOverview();
+  }
+
+  function renderProfileOverview(){
+    const badges = computeBadges();
+    const cats = Object.entries(profile.byCategory).sort((a,b)=>b[1]-a[1]);
+    const maxCat = cats.length ? cats[0][1] : 1;
+    const nextGoal = nextMilestone(profile.totalPoints);
+    const goalPct = Math.min(100, Math.round((profile.totalPoints/nextGoal)*100));
+    const body = document.getElementById('profile-tab-content');
+
+    body.innerHTML = `
       <div class="profile-grid">
         <div class="profile-card"><div class="num">${profile.totalPoints}</div><div class="lbl">Total points</div></div>
         <div class="profile-card"><div class="num accent">${profile.totalScans}</div><div class="lbl">Items sorted</div></div>
-        <div class="profile-card"><div class="num">${profile.currentStreak}</div><div class="lbl">Current streak</div></div>
         <div class="profile-card"><div class="num accent">${profile.longestStreak}</div><div class="lbl">Longest streak</div></div>
       </div>
 
@@ -1851,9 +1915,43 @@
       <div class="bins-card" id="bins-card">${binsCardInnerHtml(null)}</div>
     `;
     bindFindBinsButton();
-    const loginBtn = document.getElementById('profile-login-btn');
-    if(loginBtn) loginBtn.addEventListener('click', showAuthView);
-    emojify(el);
+    emojify(body);
+  }
+
+  function medalEmoji(rank){ return rank===1 ? '🥇' : rank===2 ? '🥈' : '🥉'; }
+  function medalColor(rank){ return rank===1 ? '#D4A017' : rank===2 ? '#9AA5B1' : '#B8722D'; }
+  function monthLabel(ym){
+    const [y,m] = ym.split('-').map(Number);
+    return new Date(y, m-1, 1).toLocaleDateString('en-US', {month:'long', year:'numeric'});
+  }
+  async function loadMedals(){
+    try{
+      const qs = session.token ? '' : ('?guest_tag=' + encodeURIComponent(guestTag || ''));
+      const res = await fetch(API_ENDPOINT + '/api/medals' + qs, {headers: requestHeaders()});
+      if(!res.ok) return [];
+      return await res.json();
+    }catch(e){ return []; }
+  }
+  async function renderProfileMedals(){
+    const body = document.getElementById('profile-tab-content');
+    body.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
+    const medals = await loadMedals();
+    if(!document.getElementById('profile-tab-content')) return;
+    if(medals.length === 0){
+      body.innerHTML = `<div class="empty-state"><div class="big">🏅</div><p>No medals yet.<br>Finish top 3 in a month to earn one.</p></div>`;
+      emojify(body);
+      return;
+    }
+    body.innerHTML = medals.map(m=>`
+      <div class="milestone-row">
+        <div class="milestone-badge" style="background:${medalColor(m.rank)};">${medalEmoji(m.rank)}</div>
+        <div class="milestone-copy">
+          <div class="milestone-title">${monthLabel(m.month)}</div>
+          <div class="milestone-sub">#${m.rank} place · ${m.points} points</div>
+        </div>
+      </div>
+    `).join('');
+    emojify(body);
   }
 
   // ---------- Tabs ----------
