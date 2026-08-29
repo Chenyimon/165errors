@@ -754,6 +754,13 @@
           <span class="label">Scan</span>
         </button>
         <p class="scan-sub">Photograph what you're recycling. We'll identify it, estimate your impact, and get it ready to share with the feed.</p>
+        <div class="fact-card" style="text-align:left; margin-top:18px;">
+          <div class="fact-card-icon">⚖️</div>
+          <div>
+            <div class="fact-card-label">How points work</div>
+            <div class="fact-card-text">We score how harmful an item is if it's binned instead of recycled (batteries and e-waste score highest) plus how much energy recycling it actually saves.</div>
+          </div>
+        </div>
       </div>
 
       <div id="scan-analyzing" class="analyzing" style="display:none;">
@@ -886,6 +893,20 @@
     other:{co2:0.5, label:'Other', icon:'♻️', tag:'neutral', recyclable:false, recycleLabel:'Non-recyclables'}
   };
   const SIZE_G = {small:15, medium:80, large:300};
+
+  // Mirrors the harm/recovery reasoning in server/../scorer.py, so the number
+  // shown here always matches what the backend actually awards.
+  const POINTS_EXPLAINER = {
+    battery: '🔋 Batteries can catch fire in bins and trucks, and leak lithium, cobalt and cadmium — the most harmful thing you can throw away. Scores the max: 37 points.',
+    ewaste: '🔌 E-waste leaks heavy metals and toxic fumes if it\'s burnt, but its gold and copper are worth recovering. Scores 35 points.',
+    plastic: '♳ Plastic is fossil-fuel based and can last centuries in landfill, but recycling it saves about 76% of the energy of making it new. Scores 23 points.',
+    textile: '👕 Synthetic fabric and dyes break down slowly and take up landfill space. Scores 13 points.',
+    metal: '🥫 Metal is harmless sitting in landfill, but recycling aluminium saves up to 95% of the energy of making it from scratch — the best recovery rate of any material. Scores 16 points.',
+    glass: '🍾 Glass is inert but takes up permanent space at Semakau, and recycling it only saves about 30% of the energy of making new glass. Scores 9 points.',
+    paper: '📄 Paper biodegrades, and recycling it saves about 60% of the energy of making it new. Scores 9 points.',
+    compost: '🍂 Singapore doesn\'t have widespread food waste recycling yet, so this won\'t earn points — but keeping it out of general waste still helps.',
+    other: '♻️ No clear recycling route for this in Singapore, so it scores the minimum: 5 points.'
+  };
 
   const PREP_TIPS = {
     plastic: ['Empty and rinse the container', 'Remove the cap and recycle it separately if your area requires that', 'Flatten it to save space'],
@@ -1382,7 +1403,7 @@
   let prepChecked = [];
 
   function renderReview(pending){
-    const imp = IMPACT[pending.category];
+    const imp = IMPACT[pending.category] || IMPACT.other;
     const tips = PREP_TIPS[pending.category] || [];
     prepChecked = tips.map(()=>false);
     const revealEl = document.getElementById('scan-reveal');
@@ -1394,10 +1415,9 @@
           <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓ ' : ''}${imp.recycleLabel}</span>
           <div class="ticket-item">${escapeHtml(pending.itemName)}</div>
           <div class="ticket-stats">
-            <div class="ticket-stat"><div class="num">${pending.weightG}g</div><div class="lbl">Est. weight</div></div>
-            <div class="ticket-stat"><div class="num">${pending.co2G}g</div><div class="lbl">CO2 saved</div></div>
             <div class="ticket-stat"><div class="num accent">+${pending.points}</div><div class="lbl">Points</div></div>
           </div>
+          <div class="ticket-fact">${POINTS_EXPLAINER[pending.category] || POINTS_EXPLAINER.other}</div>
           <div class="prep-label" style="margin-top:14px;">Add a caption</div>
           <textarea id="caption-input" class="caption-input" maxlength="280" placeholder="${pending.aiFunFact ? escapeHtml(pending.aiFunFact) : 'Say something about this...'}">${escapeHtml(pending.funFact || '')}</textarea>
           ${tips.length ? `
@@ -1572,8 +1592,6 @@
         <div class="post-item">${escapeHtml(p.itemName)} <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓ ' : ''}${imp.recycleLabel}</span></div>
         ${p.funFact ? `<div class="post-fact">${escapeHtml(p.funFact)}</div>` : ''}
         <div class="post-stats">
-          <div class="post-stat"><span class="num">${p.weightG}g</span><span class="lbl">Weight</span></div>
-          <div class="post-stat"><span class="num">${p.co2G}g</span><span class="lbl">CO2 saved</span></div>
           <div class="post-stat"><span class="num accent">+${p.points}</span><span class="lbl">Points</span></div>
         </div>
         <div class="post-divider"><span>🌱</span></div>

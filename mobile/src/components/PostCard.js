@@ -95,14 +95,6 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
           {post.funFact ? <Text style={styles.fact}>{post.funFact}</Text> : null}
           <View style={styles.stats}>
             <View style={styles.stat}>
-              <Text style={styles.statNum}>{post.weightG}g</Text>
-              <Text style={styles.statLbl}>Weight</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statNum}>{post.co2G}g</Text>
-              <Text style={styles.statLbl}>CO2 saved</Text>
-            </View>
-            <View style={styles.stat}>
               <Text style={[styles.statNum, { color: colors.terracotta }]}>+{post.points}</Text>
               <Text style={styles.statLbl}>Points</Text>
             </View>

@@ -4,12 +4,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { colors, radius } from '../theme';
 import Emoji from './Emoji';
 
-export default function FactCard({ fact }) {
+export default function FactCard({ fact, icon = '🌍', label = 'Did you know?' }) {
   return (
     <View style={styles.card}>
-      <Emoji symbol="🌍" size={20} />
+      <Emoji symbol={icon} size={20} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.label}>Did you know?</Text>
+        <Text style={styles.label}>{label}</Text>
         <Text style={styles.text}>{fact}</Text>
       </View>
     </View>

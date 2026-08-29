@@ -17,7 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 
 import { colors, radius } from '../theme';
-import { computeImpact, IMPACT } from '../lib/impact';
+import { computeImpact, IMPACT, POINTS_EXPLAINER } from '../lib/impact';
 import { PREP_TIPS } from '../lib/content';
 import { prepareImageForUpload } from '../lib/imagePrep';
 import { classifyImage, createPost } from '../lib/api';
@@ -29,6 +29,7 @@ import Button from '../components/Button';
 import Tag from '../components/Tag';
 import RecycleBadge from '../components/RecycleBadge';
 import Confetti from '../components/Confetti';
+import FactCard from '../components/FactCard';
 
 const ANALYZING_MESSAGES = [
   'Hold up… saving the Earth. 🌎',
@@ -226,7 +227,11 @@ export default function ScanScreen() {
       <AppHeader />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        // Android already resizes its window natively for the keyboard
+        // (app.json: softwareKeyboardLayoutMode "resize") — adding a
+        // KeyboardAvoidingView behavior on top of that double-compensates
+        // and leaves a blank gap where the keyboard already made room.
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -247,6 +252,13 @@ export default function ScanScreen() {
               Photograph what you're recycling. We'll identify it, estimate your impact, and get it ready to share
               with the feed.
             </Text>
+            <View style={styles.heroFactWrap}>
+              <FactCard
+                icon="⚖️"
+                label="How points work"
+                fact="We score how harmful an item is if it's binned instead of recycled (batteries and e-waste score highest) plus how much energy recycling it actually saves."
+              />
+            </View>
           </View>
         )}
 
@@ -294,18 +306,15 @@ export default function ScanScreen() {
                 <Text style={styles.itemName}>{pending.itemName}</Text>
                 <View style={styles.statsRow}>
                   <View style={styles.stat}>
-                    <Text style={styles.statNum}>{pending.weightG}g</Text>
-                    <Text style={styles.statLbl}>Est. weight</Text>
-                  </View>
-                  <View style={styles.stat}>
-                    <Text style={styles.statNum}>{pending.co2G}g</Text>
-                    <Text style={styles.statLbl}>CO2 saved</Text>
-                  </View>
-                  <View style={styles.stat}>
                     <Text style={[styles.statNum, { color: colors.terracotta }]}>+{pending.points}</Text>
                     <Text style={styles.statLbl}>Points</Text>
                   </View>
                 </View>
+                <FactCard
+                  icon={IMPACT[pending.category]?.icon || '♻️'}
+                  label="Why this many points"
+                  fact={POINTS_EXPLAINER[pending.category] || POINTS_EXPLAINER.other}
+                />
                 {(PREP_TIPS[pending.category] || []).length > 0 && (
                   <>
                     <Text style={styles.prepLabel}>Before you toss it in</Text>
@@ -386,6 +395,7 @@ const styles = StyleSheet.create({
   },
   scanBtnLabel: { color: '#fff', fontWeight: '700', fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 },
   sub: { color: colors.inkDim, fontSize: 13, marginTop: 22, maxWidth: 260, lineHeight: 19, textAlign: 'center' },
+  heroFactWrap: { alignSelf: 'stretch', marginTop: 20 },
   analyzing: { alignItems: 'center', paddingVertical: 60, gap: 18 },
   analyzingMsg: { fontSize: 12, fontWeight: '600', color: colors.inkDim, letterSpacing: 0.5 },
   previewCard: {
