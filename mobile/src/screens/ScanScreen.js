@@ -92,20 +92,6 @@ export default function ScanScreen() {
     handleCapture(result.assets[0].uri);
   }
 
-  async function pickFromGallery() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      showToast('Photo access is needed to pick an item');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.length) return;
-    handleCapture(result.assets[0].uri);
-  }
-
   async function handleCapture(uri) {
     setStage('analyzing');
     let msgIdx = 0;
@@ -277,9 +263,6 @@ export default function ScanScreen() {
           <View style={styles.hero}>
             <Pressable style={styles.scanBtn} onPress={startScan}>
               <Text style={styles.scanBtnLabel}>Scan</Text>
-            </Pressable>
-            <Pressable style={styles.galleryBtn} onPress={pickFromGallery} hitSlop={8}>
-              <Text style={styles.galleryBtnLabel}>Choose from gallery</Text>
             </Pressable>
             <Text style={styles.sub}>
               Photograph what you're recycling. We'll identify it, estimate your impact, and get it ready to share
@@ -455,13 +438,6 @@ export default function ScanScreen() {
 }
 
 const styles = StyleSheet.create({
-  galleryBtn: { marginTop: 14, paddingVertical: 8, paddingHorizontal: 14 },
-  galleryBtnLabel: {
-    fontSize: 14.5,
-    fontWeight: '600',
-    color: colors.forest,
-    textDecorationLine: 'underline',
-  },
   noRouteWhere: {
     marginTop: 14,
     paddingVertical: 10,

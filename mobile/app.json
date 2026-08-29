@@ -16,7 +16,7 @@
       "supportsTablet": false,
       "infoPlist": {
         "NSCameraUsageDescription": "SORT/ED needs camera access to photograph items you're recycling.",
-        "NSPhotoLibraryUsageDescription": "SORT/ED needs photo library access to scan items you have already photographed and to set your profile picture.",
+        "NSPhotoLibraryUsageDescription": "SORT/ED needs photo library access to set your profile picture.",
         "NSLocationWhenInUseUsageDescription": "SORT/ED uses your location to find nearby recycling bins."
       }
     },
@@ -33,7 +33,7 @@
         "expo-image-picker",
         {
           "cameraPermission": "SORT/ED needs camera access to photograph items you're recycling.",
-          "photosPermission": "SORT/ED needs photo library access to scan items you have already photographed and to set your profile picture."
+          "photosPermission": "SORT/ED needs photo library access to set your profile picture."
         }
       ],
       [
