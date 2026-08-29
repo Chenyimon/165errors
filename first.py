@@ -1,2 +1,2 @@
+print("cock")
 print("penis")
-print("COCK")
