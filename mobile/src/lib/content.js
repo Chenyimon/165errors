@@ -12,6 +12,24 @@ export const PREP_TIPS = {
     'Flatten boxes to save space',
   ],
   compost: ['Remove any packaging or stickers', 'Keep liquids and oils out'],
+  // Not blue-bin categories, but they have real routes here and the prep
+  // matters more, not less - a taped battery terminal is the actual
+  // fire-prevention step, not a nicety.
+  battery: [
+    'Tape over the ends of lithium and button batteries',
+    'Seal anything leaking or swollen in a bag first',
+    'Take it to an ALBA 3-in-1 bin — never the blue bin',
+  ],
+  ewaste: [
+    'Wipe your personal data off phones and laptops',
+    'Remove the battery if it comes out easily',
+    'ALBA bin for small items; book a collection for large appliances',
+  ],
+  textile: [
+    'Wash it — nobody can reuse it dirty',
+    'Keep pairs of shoes tied together',
+    'Donate if it is still wearable, otherwise a Cloop bin',
+  ],
   other: [
     'Check your local recycling guidelines for this material',
     'When in doubt, keep it out of the recycling bin',
