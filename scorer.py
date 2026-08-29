@@ -115,7 +115,7 @@ MAX_POINTS = 200
 
 
 class Score(BaseModel):
-    """This is the contract - exactly what the app receives. See API.md."""
+    """What score_image returns. agent.py returns AgentScore, which extends this."""
 
     item_type: str
     material: str
