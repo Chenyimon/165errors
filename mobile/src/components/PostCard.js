@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Image, Pressable, Alert, StyleSheet, TextInput } from 'react-native';
+import { View, Text, Image, Pressable, Alert, StyleSheet, TextInput, Modal } from 'react-native';
 
 import { colors, radius } from '../theme';
 import { IMPACT } from '../lib/impact';
@@ -22,6 +22,7 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
   const [caption, setCaption] = useState(post.funFact || '');
   const [draft, setDraft] = useState(post.funFact || '');
   const [saving, setSaving] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const myDisplayName = profile.username || (guestTag ? `Guest ${guestTag}` : null);
   const isMine = !!myDisplayName && post.username === myDisplayName;
@@ -95,19 +96,15 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
           </View>
           <Tag tag={imp.tag} icon={imp.icon} label={imp.label} />
           {isMine ? (
-            <>
-              <Pressable
-                style={styles.deleteBtn}
-                onPress={() => { setDraft(caption); setEditing(true); }}
-                disabled={deleting}
-                accessibilityLabel="Edit caption"
-              >
-                <Emoji symbol="✏️" size={14} />
-              </Pressable>
-              <Pressable style={styles.deleteBtn} onPress={confirmDelete} disabled={deleting}>
-                <Emoji symbol="🗑️" size={14} />
-              </Pressable>
-            </>
+            <Pressable
+              style={styles.menuBtn}
+              onPress={() => setMenuOpen(true)}
+              disabled={deleting}
+              accessibilityLabel="Post options"
+              hitSlop={8}
+            >
+              <Text style={styles.menuDots}>⋯</Text>
+            </Pressable>
           ) : null}
         </View>
 
@@ -170,6 +167,34 @@ export default function PostCard({ post, onCommentPress, onDeleted }) {
           </View>
         </View>
       </View>
+
+      <Modal
+        visible={menuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuOpen(false)}
+      >
+        <Pressable style={styles.sheetBackdrop} onPress={() => setMenuOpen(false)}>
+          <View style={styles.sheet}>
+            <Pressable
+              style={styles.sheetRow}
+              onPress={() => { setMenuOpen(false); setDraft(caption); setEditing(true); }}
+            >
+              <Text style={styles.sheetText}>Edit caption</Text>
+            </Pressable>
+            <View style={styles.sheetDivider} />
+            <Pressable
+              style={styles.sheetRow}
+              onPress={() => { setMenuOpen(false); confirmDelete(); }}
+            >
+              <Text style={[styles.sheetText, styles.sheetTextDanger]}>Delete post</Text>
+            </Pressable>
+            <Pressable style={styles.sheetCancel} onPress={() => setMenuOpen(false)}>
+              <Text style={styles.sheetText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -241,7 +266,19 @@ const styles = StyleSheet.create({
   actionBtnLiked: { backgroundColor: '#F3DDE6', borderColor: '#F3DDE6' },
   actionText: { fontWeight: '700', fontSize: 13, color: colors.inkDim },
   actionTextLiked: { color: '#8A3B5C' },
-  deleteBtn: { padding: 6, borderRadius: 8, flexShrink: 0 },
+  menuBtn: { paddingHorizontal: 6, paddingVertical: 2, flexShrink: 0 },
+  menuDots: { fontSize: 18, lineHeight: 20, color: colors.inkDim, fontWeight: '800' },
+  sheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 18, borderTopRightRadius: 18,
+    paddingTop: 8, paddingBottom: 28, paddingHorizontal: 8,
+  },
+  sheetRow: { paddingVertical: 15, paddingHorizontal: 14, borderRadius: 12 },
+  sheetText: { fontSize: 16, fontWeight: '600', color: colors.ink, textAlign: 'center' },
+  sheetTextDanger: { color: '#A33B3B' },
+  sheetDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: 14 },
+  sheetCancel: { marginTop: 8, paddingVertical: 15, borderRadius: 12, backgroundColor: colors.surfaceAlt },
   editBox: { marginTop: 6 },
   captionInput: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 10,
