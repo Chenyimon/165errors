@@ -7,9 +7,11 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-import httpx
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
+
+import agent_bridge
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -23,22 +25,7 @@ ALLOWED_ORIGIN = os.environ.get("ALLOWED_ORIGIN", "*")
 UPLOAD_DIR = Path(__file__).parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-ANTHROPIC_URL = "https://api.anthropic.com/v1/messages"
-ANTHROPIC_VERSION = "2023-06-01"
-MODEL = "claude-sonnet-4-6"
 
-SYSTEM_PROMPT = (
-    "You are a recycling classifier for an app called SORT/ED. Given a photo of an item, "
-    "respond with ONLY a raw JSON object, no markdown fences, no extra text, exactly in this shape: "
-    '{"category":"plastic|glass|metal|paper|compost|other","item_name":"short 2-4 word name of the item",'
-    '"size_bucket":"small|medium|large","fun_fact":"one short sentence, under 25 words, about the '
-    'environmental benefit of recycling this specific material","needs_confirmation":true|false}. '
-    'Set "needs_confirmation" to true if the photo is too dark, too blurry or grainy, or otherwise not '
-    'clear enough for you to confidently identify the item — still fill in your best guess for the other '
-    'fields in that case, since the app will ask the person to retake the photo rather than use your guess. '
-    'If the photo is clear but simply does not show a recyclable item, use category "other" and leave '
-    '"needs_confirmation" false.'
-)
 
 VALID_CATEGORIES = {"plastic", "glass", "metal", "paper", "compost", "other"}
 VALID_SIZES = {"small", "medium", "large"}
@@ -233,72 +220,23 @@ def logout(authorization: Optional[str] = Header(default=None)):
 # ---------- Classification ----------
 @app.post("/api/classify")
 async def classify(req: ClassifyRequest, x_app_secret: Optional[str] = Header(default=None)):
+    """Classify a photo using the tool-calling agent in the repo root.
+
+    Returns the same five fields the app has always read, plus points,
+    where_to_recycle, blue_bin and items - see server/agent_bridge.py.
+    """
     check_secret(x_app_secret)
 
     if req.media_type not in VALID_MEDIA_TYPES:
         raise HTTPException(status_code=400, detail="unsupported media type")
 
-    anthropic_body = {
-        "model": MODEL,
-        "max_tokens": 300,
-        "system": SYSTEM_PROMPT,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": req.media_type,
-                            "data": req.image_base64,
-                        },
-                    },
-                    {"type": "text", "text": "Classify this item for recycling."},
-                ],
-            }
-        ],
-    }
-
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(
-            ANTHROPIC_URL,
-            headers={
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": ANTHROPIC_VERSION,
-                "content-type": "application/json",
-            },
-            json=anthropic_body,
-        )
-
-    if resp.status_code != 200:
-        raise HTTPException(status_code=502, detail="classification upstream error")
-
-    data = resp.json()
-    text_block = next(
-        (b["text"] for b in data.get("content", []) if b.get("type") == "text"), "{}"
-    )
-    cleaned = re.sub(r"```json|```", "", text_block).strip()
-
+    # The agent makes several blocking API calls, so keep it off the event loop.
     try:
-        result = json.loads(cleaned)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=502, detail="could not parse classification")
-
-    category = result.get("category")
-    if category not in VALID_CATEGORIES:
-        category = "other"
-    size_bucket = result.get("size_bucket")
-    if size_bucket not in VALID_SIZES:
-        size_bucket = "medium"
-
-    return {
-        "category": category,
-        "item_name": str(result.get("item_name") or "Item")[:60],
-        "size_bucket": size_bucket,
-        "fun_fact": str(result.get("fun_fact") or "")[:280],
-        "needs_confirmation": bool(result.get("needs_confirmation", False)),
-    }
+        return await run_in_threadpool(
+            agent_bridge.classify, req.image_base64, req.media_type
+        )
+    except Exception:
+        raise HTTPException(status_code=502, detail="classification failed")
 
 
 # ---------- Profile ----------

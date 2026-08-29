@@ -139,6 +139,7 @@ class ScoredItem(BaseModel):
 
     name: str
     material: str
+    size: str
     quantity: int
     points: int
     blue_bin: bool
@@ -255,7 +256,7 @@ def score_image_agentic(image_b64: str, media_type: str = "image/jpeg") -> Agent
 
         total += pts
         scored.append(ScoredItem(
-            name=item.name, material=material, quantity=item.quantity,
+            name=item.name, material=material, size=size, quantity=item.quantity,
             points=pts, blue_bin=item.blue_bin,
             where_to_recycle=item.where_to_recycle,
         ))
