@@ -88,6 +88,7 @@ class AgentResult(BaseModel):
     items: list[Item]
     confidence: float
     advice: str          # one friendly sentence covering the whole photo
+    prep_tips: list[str] = []
     looks_like_retail_display: bool = False
 
 
@@ -96,6 +97,7 @@ def submit(
     items: list[Item],
     confidence: float,
     advice: str,
+    prep_tips: list[str],
     looks_like_retail_display: bool,
 ) -> str:
     """Submit your final answer. Call this last, after checking the rules.
@@ -108,6 +110,12 @@ def submit(
             quantity 3).
         confidence: 0.0 to 1.0, how sure you are overall.
         advice: One short, warm sentence covering the whole photo.
+        prep_tips: Two or three short steps for preparing THIS specific item
+            before disposal - what to rinse, remove, flatten, tape or wash.
+            Write them for the actual object in the photo, not the material in
+            general: a hoodie is "wash it before donating", not "keep pairs of
+            shoes together". Imperatives, under ten words each. Empty list if
+            there is genuinely nothing to prepare.
         looks_like_retail_display: True if this looks like goods for sale rather
             than something being thrown away - items on a shop shelf or rack,
             price tags or barcodes, several identical new products together,
@@ -157,6 +165,7 @@ class AgentScore(Score):
     tool_calls: int = 0
     items: list[ScoredItem] = []
     needs_confirmation: bool = False
+    prep_tips: list[str] = []
 
 
 def score_image_agentic(image_b64: str, media_type: str = "image/jpeg") -> AgentScore:
@@ -276,6 +285,7 @@ def score_image_agentic(image_b64: str, media_type: str = "image/jpeg") -> Agent
         ),
         tool_calls=tool_calls,
         items=scored,
+        prep_tips=[t.strip() for t in result.prep_tips if t and t.strip()][:4],
         needs_confirmation=result.confidence < CONFIDENCE_THRESHOLD,
         error=None,
     )

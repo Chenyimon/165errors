@@ -132,6 +132,13 @@ export default function ScanScreen() {
       const { weightG, co2G, points, imp, category } = computeImpact(
         result.category, result.size_bucket, result.points);
 
+      // The agent writes tips for the actual object photographed. The static
+      // per-category list is the fallback - it cannot tell a hoodie from a pair
+      // of shoes, since both are just "textile".
+      const prepTips = Array.isArray(result.prep_tips) && result.prep_tips.length
+        ? result.prep_tips
+        : (PREP_TIPS[category] || []);
+
       setPending({
         category,
         itemName: result.item_name || imp.label,
@@ -141,8 +148,9 @@ export default function ScanScreen() {
         aiFunFact: result.fun_fact || '',
         imageUri: resizedUri,
         scanId: result.scan_id,
+        prepTips,
       });
-      setCheckedTips((PREP_TIPS[category] || []).map(() => false));
+      setCheckedTips(prepTips.map(() => false));
       setCaptionText('');
       clearInterval(msgTimer);
       setStage('review');
@@ -346,11 +354,11 @@ export default function ScanScreen() {
                   label="Why this many points"
                   fact={POINTS_EXPLAINER[pending.category] || POINTS_EXPLAINER.other}
                 />
-                {(PREP_TIPS[pending.category] || []).length > 0 && (
+                {(pending.prepTips || []).length > 0 && (
                   <>
                     <Text style={styles.prepLabel}>Before you toss it in</Text>
                     <View>
-                      {(PREP_TIPS[pending.category] || []).map((tip, i) => (
+                      {(pending.prepTips || []).map((tip, i) => (
                         <Pressable key={i} style={styles.prepItem} onPress={() => toggleTip(i)}>
                           <View style={[styles.prepCheck, checkedTips[i] && styles.prepCheckChecked]}>
                             {checkedTips[i] ? <Text style={styles.prepCheckMark}>✓</Text> : null}

@@ -57,6 +57,7 @@ def classify(image_base64: str, media_type: str = "image/jpeg") -> dict:
             "where_to_recycle": "",
             "blue_bin": False,
             "items": [],
+            "prep_tips": [],
             "error": result.error,
         }
 
@@ -78,5 +79,8 @@ def classify(image_base64: str, media_type: str = "image/jpeg") -> dict:
         "where_to_recycle": result.where_to_recycle,
         "blue_bin": result.blue_bin,
         "items": [i.model_dump() for i in result.items],
+        # Written for the actual object photographed, so the app can show these
+        # instead of the generic per-category list.
+        "prep_tips": result.prep_tips,
         "error": None,
     }
