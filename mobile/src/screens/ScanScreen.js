@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -77,6 +77,7 @@ export default function ScanScreen() {
   const [unclearUri, setUnclearUri] = useState(null);
   const [captionText, setCaptionText] = useState('');
   const [celebrate, setCelebrate] = useState(0);
+  const scrollRef = useRef(null);
 
   async function startScan() {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -220,6 +221,7 @@ export default function ScanScreen() {
       >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -294,17 +296,6 @@ export default function ScanScreen() {
                     <Text style={styles.statLbl}>Points</Text>
                   </View>
                 </View>
-                <Text style={styles.prepLabel}>Add a caption</Text>
-                <TextInput
-                  style={styles.captionInput}
-                  value={captionText}
-                  onChangeText={setCaptionText}
-                  placeholder={pending.aiFunFact || 'Say something about this...'}
-                  placeholderTextColor={colors.inkDim}
-                  multiline
-                  maxLength={280}
-                />
-
                 {(PREP_TIPS[pending.category] || []).length > 0 && (
                   <>
                     <Text style={styles.prepLabel}>Before you toss it in</Text>
@@ -320,6 +311,24 @@ export default function ScanScreen() {
                     </View>
                   </>
                 )}
+
+                <Text style={styles.prepLabel}>Add a caption</Text>
+                <TextInput
+                  style={styles.captionInput}
+                  value={captionText}
+                  onChangeText={setCaptionText}
+                  placeholder={pending.aiFunFact || 'Say something about this...'}
+                  placeholderTextColor={colors.inkDim}
+                  multiline
+                  maxLength={280}
+                  onFocus={() => {
+                    // Keep the caption visible above the keyboard instead of
+                    // letting it get covered — the input sits near the
+                    // bottom of the scroll content, right before the
+                    // action buttons, so scrolling to the end reveals it.
+                    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
+                  }}
+                />
               </View>
             </View>
 
