@@ -82,7 +82,7 @@ export default function FeedScreen() {
           item.type === 'header' ? (
             <Text style={styles.sectionLabel}>{item.label}</Text>
           ) : (
-            <PostCard post={item.post} onCommentPress={setActivePostId} />
+            <PostCard post={item.post} onCommentPress={setActivePostId} onDeleted={load} />
           )
         }
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.forest} />}

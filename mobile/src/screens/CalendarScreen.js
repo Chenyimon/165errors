@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { colors } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
-import { getMyPosts, imageUrl } from '../lib/api';
+import { getMyPosts, imageSource } from '../lib/api';
 import AppHeader from '../components/AppHeader';
 import PostCard from '../components/PostCard';
 
@@ -146,7 +146,7 @@ export default function CalendarScreen() {
                     onPress={() => setSelectedKey(key)}
                   >
                     {dayPosts[0].imageUrl ? (
-                      <Image source={{ uri: imageUrl(dayPosts[0].imageUrl) }} style={styles.cellImage} />
+                      <Image source={imageSource(dayPosts[0].imageUrl)} style={styles.cellImage} />
                     ) : null}
                     <Text style={[styles.cellNum, styles.cellNumFilled]}>{day}</Text>
                     {dayPosts.length > 1 ? (
@@ -171,7 +171,11 @@ export default function CalendarScreen() {
                 <Text style={styles.closeText}>✕</Text>
               </Pressable>
             </View>
-            <FlatList data={selectedPosts} keyExtractor={(p) => p.id} renderItem={({ item }) => <PostCard post={item} />} />
+            <FlatList
+              data={selectedPosts}
+              keyExtractor={(p) => p.id}
+              renderItem={({ item }) => <PostCard post={item} onDeleted={load} />}
+            />
           </View>
         </View>
       </Modal>

@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, Alert, StyleSheet } from 'react-native';
 
 import { colors, radius } from '../theme';
 import { IMPACT } from '../lib/impact';
 import { timeAgo } from '../lib/format';
-import { imageUrl, toggleLike } from '../lib/api';
+import { imageSource, toggleLike, deletePost } from '../lib/api';
 import { useProfile } from '../lib/ProfileContext';
 import Tag from './Tag';
 import RecycleBadge from './RecycleBadge';
 import Emoji from './Emoji';
 
-export default function PostCard({ post, onCommentPress }) {
-  const { guestTag } = useProfile();
+export default function PostCard({ post, onCommentPress, onDeleted }) {
+  const { profile, guestTag } = useProfile();
   const imp = IMPACT[post.category] || IMPACT.other;
   const initial = (post.username || '?').trim().charAt(0).toUpperCase();
   const [liked, setLiked] = useState(!!post.likedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount || 0);
   const [likeBusy, setLikeBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const myDisplayName = profile.username || (guestTag ? `Guest ${guestTag}` : null);
+  const isMine = !!myDisplayName && post.username === myDisplayName;
 
   async function handleLike() {
     if (likeBusy) return;
@@ -29,6 +33,26 @@ export default function PostCard({ post, onCommentPress }) {
       // keep previous state on failure
     }
     setLikeBusy(false);
+  }
+
+  function confirmDelete() {
+    Alert.alert('Delete this post?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setDeleting(true);
+          try {
+            await deletePost(post.id, guestTag);
+            onDeleted && onDeleted(post.id);
+          } catch (e) {
+            Alert.alert("Couldn't delete", 'Please try again.');
+            setDeleting(false);
+          }
+        },
+      },
+    ]);
   }
 
   return (
@@ -50,9 +74,14 @@ export default function PostCard({ post, onCommentPress }) {
             <Text style={styles.time}>{timeAgo(post.ts)}</Text>
           </View>
           <Tag tag={imp.tag} icon={imp.icon} label={imp.label} />
+          {isMine ? (
+            <Pressable style={styles.deleteBtn} onPress={confirmDelete} disabled={deleting}>
+              <Emoji symbol="🗑️" size={14} />
+            </Pressable>
+          ) : null}
         </View>
 
-        {post.imageUrl ? <Image source={{ uri: imageUrl(post.imageUrl) }} style={styles.image} /> : null}
+        {post.imageUrl ? <Image source={imageSource(post.imageUrl)} style={styles.image} /> : null}
 
         <View style={styles.body}>
           <View style={styles.itemRow}>
@@ -157,4 +186,5 @@ const styles = StyleSheet.create({
   actionBtnLiked: { backgroundColor: '#F3DDE6', borderColor: '#F3DDE6' },
   actionText: { fontWeight: '700', fontSize: 13, color: colors.inkDim },
   actionTextLiked: { color: '#8A3B5C' },
+  deleteBtn: { padding: 6, borderRadius: 8, flexShrink: 0 },
 });

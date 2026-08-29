@@ -579,3 +579,36 @@ def create_comment(
         "text": text,
         "ts": ts,
     }
+
+
+@app.delete("/api/posts/{post_id}")
+def delete_post(
+    post_id: str,
+    guest_tag: Optional[str] = None,
+    username: Optional[str] = Depends(get_optional_username),
+    x_app_secret: Optional[str] = Header(default=None),
+):
+    check_secret(x_app_secret)
+    identity = username or guest_display_name(guest_tag)
+    if not identity:
+        raise HTTPException(status_code=401, detail="could not verify identity")
+
+    with get_conn() as conn:
+        row = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="post not found")
+        if row["username"] != identity:
+            raise HTTPException(status_code=403, detail="you can only delete your own posts")
+
+        image_path = row["image_path"]
+        conn.execute("DELETE FROM posts WHERE id = ?", (post_id,))
+        conn.execute("DELETE FROM likes WHERE post_id = ?", (post_id,))
+        conn.execute("DELETE FROM comments WHERE post_id = ?", (post_id,))
+
+    if image_path:
+        try:
+            (UPLOAD_DIR / image_path).unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    return {"ok": True}

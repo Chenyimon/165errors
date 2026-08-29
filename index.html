@@ -208,6 +208,11 @@
     overflow:hidden; margin-bottom:16px; box-shadow:0 1px 2px rgba(44,71,54,0.05), 0 8px 20px rgba(44,71,54,0.07);
   }
   .post-header{display:flex; align-items:center; gap:10px; padding:12px 14px;}
+  .post-delete-btn{
+    background:none; border:none; padding:5px; margin:0 -4px 0 -2px; cursor:pointer;
+    font-size:14px; border-radius:8px; flex-shrink:0; line-height:1;
+  }
+  .post-delete-btn:active{background:var(--surface-alt);}
   .post-avatar{
     width:36px; height:36px; border-radius:50%; background:var(--forest); color:#fff;
     display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0;
@@ -948,6 +953,13 @@
     if(!res.ok) throw new Error('like failed');
     return res.json();
   }
+  async function deletePost(postId){
+    const qs = session.token ? '' : ('?guest_tag=' + encodeURIComponent(guestTag || ''));
+    const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + qs, {
+      method:'DELETE', headers: requestHeaders()
+    });
+    if(!res.ok) throw new Error('delete failed');
+  }
   async function loadComments(postId){
     try{
       const res = await fetch(API_ENDPOINT + '/api/posts/' + encodeURIComponent(postId) + '/comments', {headers: baseHeaders()});
@@ -967,6 +979,30 @@
   function postImageUrl(path){
     if(!path) return '';
     return path.startsWith('http') ? path : API_ENDPOINT + path;
+  }
+
+  // A plain <img src> can't send the ngrok-skip-browser-warning header, so
+  // ngrok's free-tier interstitial intercepts it and serves an HTML warning
+  // page instead of the image. Fetch the bytes ourselves (with the header)
+  // and hand the <img> an object URL instead.
+  const imageBlobCache = new Map();
+  async function hydrateImages(container){
+    const imgs = container.querySelectorAll('img[data-src]');
+    await Promise.all(Array.from(imgs).map(async (img)=>{
+      const url = img.getAttribute('data-src');
+      if(!url) return;
+      try{
+        let objectUrl = imageBlobCache.get(url);
+        if(!objectUrl){
+          const res = await fetch(url, {headers: baseHeaders()});
+          if(!res.ok) return;
+          const blob = await res.blob();
+          objectUrl = URL.createObjectURL(blob);
+          imageBlobCache.set(url, objectUrl);
+        }
+        img.src = objectUrl;
+      }catch(e){ /* leave placeholder, non-fatal */ }
+    }));
   }
 
   function compressImage(file, maxDim, quality){
@@ -1271,6 +1307,11 @@
   }
 
   // ---------- Feed ----------
+  function isMyPost(p){
+    if(session.token) return p.username === profile.username;
+    return !!guestTag && p.username === ('Guest ' + guestTag);
+  }
+
   function postCardHtml(p){
     const imp = IMPACT[p.category] || IMPACT.other;
     const initial = (p.username||'?').trim().charAt(0).toUpperCase();
@@ -1282,8 +1323,9 @@
           <div class="post-time">${timeAgo(p.ts)}</div>
         </div>
         <div class="tag tag-${imp.tag}">${imp.icon} ${imp.label}</div>
+        ${isMyPost(p) ? `<button class="post-delete-btn" data-post-id="${p.id}" title="Delete post" type="button">🗑️</button>` : ''}
       </div>
-      ${p.imageUrl ? `<div class="post-image"><img src="${postImageUrl(p.imageUrl)}" alt=""></div>` : ''}
+      ${p.imageUrl ? `<div class="post-image"><img data-src="${postImageUrl(p.imageUrl)}" alt=""></div>` : ''}
       <div class="post-body">
         <div class="post-item">${escapeHtml(p.itemName)} <span class="badge-recyclable ${imp.recyclable ? 'yes' : 'no'}">${imp.recyclable ? '✓' : '!'} ${imp.recycleLabel}</span></div>
         ${p.funFact ? `<div class="post-fact">${escapeHtml(p.funFact)}</div>` : ''}
@@ -1337,6 +1379,7 @@
     }
     emojify(el);
     bindPostActionButtons(el);
+    hydrateImages(el);
   }
 
   function bindPostActionButtons(container){
@@ -1359,6 +1402,21 @@
       btn.addEventListener('click', ()=>{
         document.getElementById('comments-panel').style.display = 'flex';
         renderCommentsPanel(btn.dataset.postId);
+      });
+    });
+    container.querySelectorAll('.post-delete-btn').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        if(!confirm('Delete this post? This cannot be undone.')) return;
+        btn.disabled = true;
+        try{
+          await deletePost(btn.dataset.postId);
+          showToast('Post deleted');
+          const card = btn.closest('.post-card');
+          if(card) card.remove();
+        }catch(e){
+          showToast("Couldn't delete — try again");
+          btn.disabled = false;
+        }
       });
     });
   }
@@ -1403,7 +1461,7 @@
       if(dayPosts.length){
         const thumb = dayPosts[0].imageUrl ? postImageUrl(dayPosts[0].imageUrl) : '';
         cells += `<button class="calendar-day filled ${isToday?'today':''}" data-day-key="${key}">
-          ${thumb ? `<img src="${thumb}" alt="">` : ''}
+          ${thumb ? `<img data-src="${thumb}" alt="">` : ''}
           <span class="calendar-day-num">${day}</span>
           ${dayPosts.length>1 ? `<span class="calendar-day-count">+${dayPosts.length-1}</span>` : ''}
         </button>`;
@@ -1423,6 +1481,7 @@
       </div>
       <div class="calendar-grid">${cells}</div>
     `;
+    hydrateImages(el);
 
     document.getElementById('cal-prev').addEventListener('click', ()=>{
       calendarCursor.setMonth(calendarCursor.getMonth()-1);
@@ -1448,6 +1507,7 @@
     body.innerHTML = posts.map(postCardHtml).join('');
     emojify(body);
     bindPostActionButtons(body);
+    hydrateImages(body);
     document.getElementById('day-panel').style.display = 'flex';
   }
 

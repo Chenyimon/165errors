@@ -152,6 +152,15 @@ export async function toggleLike(postId, guestTag) {
   return res.json();
 }
 
+export async function deletePost(postId, guestTag) {
+  const qs = !authToken && guestTag ? `?guest_tag=${encodeURIComponent(guestTag)}` : '';
+  const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}${qs}`, {
+    method: 'DELETE',
+    headers: requestHeaders(),
+  });
+  if (!res.ok) throw new Error('delete failed: ' + res.status);
+}
+
 export async function getComments(postId) {
   const res = await fetch(`${API_BASE}/api/posts/${encodeURIComponent(postId)}/comments`, {
     headers: baseHeaders(),
@@ -174,4 +183,13 @@ export async function addComment(postId, text, guestTag) {
 export function imageUrl(path) {
   if (!path) return null;
   return path.startsWith('http') ? path : `${API_BASE}${path}`;
+}
+
+// ngrok's free-tier browser-warning interstitial intercepts plain image
+// requests (it can't tell them apart from a normal page visit) unless this
+// header is present. RN's <Image> lets us attach headers, unlike a web <img>.
+export function imageSource(path) {
+  const uri = imageUrl(path);
+  if (!uri) return null;
+  return { uri, headers: { 'ngrok-skip-browser-warning': 'true', 'x-app-secret': APP_SECRET } };
 }
