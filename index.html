@@ -253,6 +253,37 @@
   }
   .add-comment-row .btn{flex:none; padding:11px 16px;}
 
+  /* ---------- Calendar ---------- */
+  .calendar-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .calendar-nav-btn{
+    width:34px; height:34px; border-radius:50%; border:1.5px solid var(--border); background:var(--surface);
+    font-size:18px; line-height:1; color:var(--forest); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-family:'Nunito',sans-serif;
+  }
+  .calendar-nav-btn:disabled{opacity:0.35; cursor:not-allowed;}
+  .calendar-month-label{font-family:'Fraunces',serif; font-weight:600; font-size:16px; color:var(--ink);}
+  .calendar-weekdays{display:grid; grid-template-columns:repeat(7,1fr); margin-bottom:8px;}
+  .calendar-weekdays span{text-align:center; font-size:11px; font-weight:700; color:var(--ink-dim); text-transform:uppercase;}
+  .calendar-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px;}
+  .calendar-day{
+    aspect-ratio:1; border-radius:10px; background:var(--surface-alt); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+    padding:0; margin:0; font-family:'Nunito',sans-serif; box-sizing:border-box;
+  }
+  .calendar-day.empty{background:transparent; border:none;}
+  .calendar-day.today{border-color:var(--forest); border-width:2px;}
+  .calendar-day-num{font-size:12px; font-weight:700; color:var(--ink-dim);}
+  .calendar-day.filled{cursor:pointer; border:none;}
+  .calendar-day.filled img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .calendar-day.filled .calendar-day-num{
+    position:absolute; top:3px; left:5px; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.6); z-index:1; font-size:11px;
+  }
+  .calendar-day.filled.today{outline:2px solid var(--sun); outline-offset:-2px;}
+  .calendar-day-count{
+    position:absolute; bottom:3px; right:4px; background:rgba(0,0,0,0.55); color:#fff; font-size:9px; font-weight:800;
+    padding:1px 5px; border-radius:10px; z-index:1;
+  }
+
   /* ---------- Preview content (category pill, stats row, fun fact) ---------- */
   .ticket-cat{
     display:inline-block;
@@ -602,6 +633,12 @@
       <div id="scan-reveal" style="display:none;"></div>
     </section>
 
+    <!-- CALENDAR VIEW -->
+    <section class="view" id="view-calendar">
+      <h1 class="view-title">Your calendar</h1>
+      <div id="calendar-content"></div>
+    </section>
+
     <!-- PROFILE VIEW -->
     <section class="view" id="view-profile">
       <h1 class="view-title">Your impact</h1>
@@ -622,6 +659,10 @@
     <button class="tab-btn scan-tab" data-view="scan">
       <span class="plus-circle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></span>
       Post
+    </button>
+    <button class="tab-btn" data-view="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>
+      Calendar
     </button>
     <button class="tab-btn" data-view="profile">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c1.2-3.6 4-5.4 7-5.4s5.8 1.8 7 5.4"/></svg>
@@ -646,6 +687,16 @@
         <button class="panel-close" id="comments-close" type="button">✕</button>
       </div>
       <div id="comments-body"></div>
+    </div>
+  </div>
+
+  <div id="day-panel" class="panel-overlay" style="display:none;">
+    <div class="panel-sheet">
+      <div class="panel-header">
+        <div class="panel-title" id="day-panel-title">Day</div>
+        <button class="panel-close" id="day-panel-close" type="button">✕</button>
+      </div>
+      <div id="day-panel-body"></div>
     </div>
   </div>
 
@@ -877,6 +928,14 @@
     try{
       const qs = session.token ? '' : ('?guest_tag=' + encodeURIComponent(guestTag || ''));
       const res = await fetch(API_ENDPOINT + '/api/posts' + qs, {headers: requestHeaders()});
+      if(!res.ok) return [];
+      return await res.json();
+    }catch(e){ return []; }
+  }
+  async function loadMyPosts(){
+    try{
+      const qs = session.token ? '' : ('?guest_tag=' + encodeURIComponent(guestTag || ''));
+      const res = await fetch(API_ENDPOINT + '/api/posts/mine' + qs, {headers: requestHeaders()});
       if(!res.ok) return [];
       return await res.json();
     }catch(e){ return []; }
@@ -1304,6 +1363,98 @@
     });
   }
 
+  // ---------- Calendar ----------
+  let calendarCursor = new Date();
+  calendarCursor.setDate(1);
+
+  function dayKey(y,m,d){ return y+'-'+m+'-'+d; }
+
+  function groupPostsByDay(posts){
+    const map = {};
+    posts.forEach(p=>{
+      const d = new Date(p.ts);
+      const key = dayKey(d.getFullYear(), d.getMonth()+1, d.getDate());
+      if(!map[key]) map[key] = [];
+      map[key].push(p);
+    });
+    return map;
+  }
+
+  async function renderCalendar(){
+    const el = document.getElementById('calendar-content');
+    el.innerHTML = `<div class="empty-state"><div class="spinner" style="margin:0 auto;"></div></div>`;
+    const posts = await loadMyPosts();
+    const grouped = groupPostsByDay(posts);
+
+    const year = calendarCursor.getFullYear();
+    const month = calendarCursor.getMonth();
+    const monthLabel = calendarCursor.toLocaleDateString('en-US', {month:'long', year:'numeric'});
+    const startWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const today = new Date();
+    const isCurrentMonth = today.getFullYear()===year && today.getMonth()===month;
+
+    let cells = '';
+    for(let i=0;i<startWeekday;i++) cells += `<div class="calendar-day empty"></div>`;
+    for(let day=1; day<=daysInMonth; day++){
+      const key = dayKey(year, month+1, day);
+      const dayPosts = grouped[key] || [];
+      const isToday = isCurrentMonth && today.getDate()===day;
+      if(dayPosts.length){
+        const thumb = dayPosts[0].imageUrl ? postImageUrl(dayPosts[0].imageUrl) : '';
+        cells += `<button class="calendar-day filled ${isToday?'today':''}" data-day-key="${key}">
+          ${thumb ? `<img src="${thumb}" alt="">` : ''}
+          <span class="calendar-day-num">${day}</span>
+          ${dayPosts.length>1 ? `<span class="calendar-day-count">+${dayPosts.length-1}</span>` : ''}
+        </button>`;
+      }else{
+        cells += `<div class="calendar-day ${isToday?'today':''}"><span class="calendar-day-num">${day}</span></div>`;
+      }
+    }
+
+    el.innerHTML = `
+      <div class="calendar-nav">
+        <button class="calendar-nav-btn" id="cal-prev" type="button">‹</button>
+        <div class="calendar-month-label">${monthLabel}</div>
+        <button class="calendar-nav-btn" id="cal-next" type="button" ${isCurrentMonth ? 'disabled' : ''}>›</button>
+      </div>
+      <div class="calendar-weekdays">
+        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+      </div>
+      <div class="calendar-grid">${cells}</div>
+    `;
+
+    document.getElementById('cal-prev').addEventListener('click', ()=>{
+      calendarCursor.setMonth(calendarCursor.getMonth()-1);
+      renderCalendar();
+    });
+    document.getElementById('cal-next').addEventListener('click', ()=>{
+      if(isCurrentMonth) return;
+      calendarCursor.setMonth(calendarCursor.getMonth()+1);
+      renderCalendar();
+    });
+    el.querySelectorAll('.calendar-day.filled').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        openDayPanel(grouped[btn.dataset.dayKey] || [], btn.dataset.dayKey);
+      });
+    });
+  }
+
+  function openDayPanel(posts, key){
+    const [y,m,d] = key.split('-').map(Number);
+    const label = new Date(y, m-1, d).toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+    document.getElementById('day-panel-title').textContent = label;
+    const body = document.getElementById('day-panel-body');
+    body.innerHTML = posts.map(postCardHtml).join('');
+    emojify(body);
+    bindPostActionButtons(body);
+    document.getElementById('day-panel').style.display = 'flex';
+  }
+
+  document.getElementById('day-panel-close').addEventListener('click', ()=>{
+    document.getElementById('day-panel').style.display = 'none';
+  });
+
   // ---------- Group events ----------
   let joinedEvents = [];
   async function loadJoinedEvents(){
@@ -1578,6 +1729,7 @@
       document.getElementById('view-'+btn.dataset.view).classList.add('active');
       if(btn.dataset.view === 'feed') renderFeed();
       if(btn.dataset.view === 'board') renderBoard();
+      if(btn.dataset.view === 'calendar') renderCalendar();
       if(btn.dataset.view === 'profile') renderProfile();
     });
   });
