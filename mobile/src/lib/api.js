@@ -125,7 +125,7 @@ export async function getMyPosts(guestTag) {
   return res.json();
 }
 
-export async function createPost({ category, itemName, weightG, co2G, points, funFact, imageUri, mediaType, guestTag }) {
+export async function createPost({ category, itemName, weightG, co2G, points, funFact, imageUri, mediaType, guestTag, scanId }) {
   const form = new FormData();
   form.append('category', category);
   form.append('item_name', itemName);
@@ -133,6 +133,9 @@ export async function createPost({ category, itemName, weightG, co2G, points, fu
   form.append('co2_g', String(co2G));
   form.append('points', String(points));
   form.append('fun_fact', funFact || '');
+  // Lets the server score this from what it decided at /api/classify rather
+  // than trusting the number we computed here.
+  if (scanId) form.append('scan_id', scanId);
   if (!authToken && guestTag) form.append('guest_tag', guestTag);
   form.append('image', {
     uri: imageUri,
