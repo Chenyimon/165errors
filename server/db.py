@@ -86,6 +86,18 @@ def init_db():
         )
         conn.execute(
             """
+            CREATE TABLE IF NOT EXISTS awarded_medals (
+                username TEXT NOT NULL,
+                month TEXT NOT NULL,
+                scope TEXT NOT NULL,          -- 'friends' or 'global'
+                rank INTEGER NOT NULL,        -- 1, 2 or 3
+                points INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (username, month, scope)
+            )
+            """
+        )
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS comments (
                 id TEXT PRIMARY KEY,
                 post_id TEXT NOT NULL,

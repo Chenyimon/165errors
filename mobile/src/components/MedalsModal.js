@@ -4,10 +4,28 @@ import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'rea
 import { colors } from '../theme';
 import { useProfile } from '../lib/ProfileContext';
 import { getMedals } from '../lib/api';
-import Emoji from './Emoji';
+import MedalIcon from './MedalIcon';
 
-const MEDAL_EMOJI = { 1: '🥇', 2: '🥈', 3: '🥉' };
-const MEDAL_COLOR = { 1: '#D4A017', 2: '#9AA5B1', 3: '#B8722D' };
+// Two ladders. Friends placings use the familiar medals; the global board -
+// harder to place in - uses gemstones, so a global third still reads as rarer
+// than a friends first.
+const TIERS = {
+  friends: {
+    1: { tier: 'gold',   name: 'Gold',   color: '#D4A017' },
+    2: { tier: 'silver', name: 'Silver', color: '#9AA5B1' },
+    3: { tier: 'bronze', name: 'Bronze', color: '#B8722D' },
+  },
+  global: {
+    1: { tier: 'diamond',  name: 'Diamond',  color: '#2E86A8' },
+    2: { tier: 'ruby',     name: 'Ruby',     color: '#6E1420' },
+    3: { tier: 'platinum', name: 'Platinum', color: '#5F6B76' },
+  },
+};
+
+function tierFor(medal) {
+  const ladder = TIERS[medal.scope] || TIERS.global;
+  return ladder[medal.rank] || ladder[3];
+}
 
 function monthLabel(ym) {
   const [y, m] = String(ym).split('-');
@@ -46,23 +64,32 @@ export default function MedalsModal({ visible, onClose }) {
             <ActivityIndicator color={colors.forest} style={{ marginVertical: 30 }} />
           ) : medals.length === 0 ? (
             <View style={styles.empty}>
-              <Emoji symbol="🏅" size={34} style={styles.emptyBig} />
+              <View style={{ marginBottom: 10 }}>
+                <MedalIcon tier="gold" size={34} />
+              </View>
               <Text style={styles.emptyText}>
                 No medals yet.{'\n'}Finish top 3 in a month to earn one.
               </Text>
             </View>
           ) : (
-            medals.map((m) => (
-              <View key={m.month} style={styles.milestoneRow}>
-                <View style={[styles.milestoneBadge, { backgroundColor: MEDAL_COLOR[m.rank] }]}>
-                  <Emoji symbol={MEDAL_EMOJI[m.rank]} size={18} />
+            medals.map((m) => {
+              const tier = tierFor(m);
+              return (
+                <View key={`${m.month}-${m.scope}`} style={styles.milestoneRow}>
+                  <View style={[styles.milestoneBadge, { backgroundColor: tier.color }]}>
+                    <MedalIcon tier={tier.tier} size={18} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.milestoneTitle}>
+                      {tier.name} · {m.scope === 'friends' ? 'Friends' : 'Global'}
+                    </Text>
+                    <Text style={styles.milestoneSub}>
+                      {monthLabel(m.month)} · #{m.rank} place · {m.points} points
+                    </Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.milestoneTitle}>{monthLabel(m.month)}</Text>
-                  <Text style={styles.milestoneSub}>#{m.rank} place · {m.points} points</Text>
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </View>
@@ -88,7 +115,6 @@ const styles = StyleSheet.create({
   },
   closeText: { color: colors.inkDim, fontSize: 14 },
   empty: { alignItems: 'center', paddingVertical: 50 },
-  emptyBig: { marginBottom: 10 },
   emptyText: { fontSize: 13, lineHeight: 20, color: colors.inkDim, textAlign: 'center' },
   milestoneRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10 },
   milestoneBadge: {

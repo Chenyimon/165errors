@@ -438,7 +438,28 @@ def my_medals(guest_tag: Optional[str] = None, username: Optional[str] = Depends
             """,
             (identity,),
         ).fetchall()
-    return [{"month": r["month"], "points": r["points"], "rank": r["rnk"]} for r in rows]
+        # Derived medals are global standings. Awarded rows cover anything the
+        # derived query cannot produce - a friends-league placing, or a month
+        # that has not finished yet.
+        awarded = conn.execute(
+            "SELECT month, scope, rank, points FROM awarded_medals WHERE username = ?",
+            (identity,),
+        ).fetchall()
+
+    medals = [
+        {"month": r["month"], "points": r["points"], "rank": r["rnk"], "scope": "global"}
+        for r in rows
+    ]
+    seen = {(m["month"], m["scope"]) for m in medals}
+    for a in awarded:
+        if (a["month"], a["scope"]) not in seen:
+            medals.append({
+                "month": a["month"], "points": a["points"],
+                "rank": a["rank"], "scope": a["scope"],
+            })
+
+    medals.sort(key=lambda m: (m["month"], m["scope"]), reverse=True)
+    return medals
 
 
 # ---------- Friends ----------
